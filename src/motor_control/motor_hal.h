@@ -14,7 +14,7 @@ typedef struct
 
 } phase_t;
 
-    phase_t motor_hal_init_phase(uint8_t gpio);
+    phase_t motor_hal_phase_cfg(uint8_t gpio);
 
     // Initialize PWM for a given motor phase.
     void motor_hal_pwm_init(phase_t phase);

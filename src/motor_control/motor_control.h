@@ -1,7 +1,7 @@
 #ifndef MOTOR_CONTROL_H
 #define MOTOR_CONTROL_H
 
-#include "motor_hal.h"
+#include <stdint.h>
 // planning 
 /*This module is a high level module which is hardware independent. will talk only 
 to motor_hal.h not directly to GPIO or SPI or PWM. 
@@ -12,6 +12,6 @@ This module will achieve the following functionality:
 - fault handling.
 */
 
-void init(phase_t phase);
+void init(uint8_t PHASE_PWM_GPIO);
 
 #endif

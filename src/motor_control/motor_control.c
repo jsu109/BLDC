@@ -3,8 +3,9 @@
 
 
 
-void init(phase_t phase)
+void init(uint8_t PHASE_PWM_GPIO)
 {
-    motor_hal_pwm_init(phase);
+    phase_t phasePWM = motor_hal_phase_cfg(PHASE_PWM_GPIO);
+    motor_hal_pwm_init(phasePWM);
     
 }

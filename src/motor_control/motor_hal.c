@@ -4,14 +4,14 @@
 #include "hardware/gpio.h"
 #include "hardware/pwm.h"
 
-// setup phase structure.
-phase_t motor_hal_init_phase(uint8_t gpio)
+// configure phase structure.
+phase_t motor_hal_phase_cfg(uint8_t gpio)
 {
     phase_t phase;
     phase.GPIO = gpio;
     phase.sliceNum = pwm_gpio_to_slice_num(gpio);
     phase.chan = pwm_gpio_to_channel(phase.GPIO);
-    phase.wrap = 2499;
+    phase.wrap = 2499; 
     return phase;
 }
 
