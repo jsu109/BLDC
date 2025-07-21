@@ -7,21 +7,22 @@ typedef struct
 {
     uint8_t GPIO;
     uint8_t sliceNum;
+    uint8_t chan;
 
 } phase_t;
 
 
     // Initialize PWM for a given motor phase.
-    void motor_hal_pwm_init(uint8_t phase);
+    void motor_hal_pwm_init(phase_t phase);
 
     // Set duty cycle for a motor phase in the range [0.0, 1.0].
-    void motor_hal_set_pwm(uint8_t phase, float duty_cycle);
+    void motor_hal_set_pwm(phase_t phase, float duty_cycle);
     
     // Enable PWM output for a phase.
-    void motor_hal_pwm_enable(uint8_t phase);
+    void motor_hal_pwm_enable(phase_t phase);
 
     // Disable PWM output for a phase.
-    void motor_hal_pwm_disable(uint8_t phase);
+    void motor_hal_pwm_disable(phase_t phase);
     
 
 

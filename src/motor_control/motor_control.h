@@ -11,4 +11,6 @@ This module will achieve the following functionality:
 - fault handling.
 */
 
+void init(phase_t phase);
+
 #endif
