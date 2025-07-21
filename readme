@@ -4,15 +4,16 @@ BLDC_testApp/
 │
 ├── src/                            # Application source files (.c)
 │   ├── main.c                      # Entry point
-│   ├── motor_control.c            # 6-step commutation, DRV8317 logic
-│   ├── encoder.c                  # AS5080A SPI read logic
+│   ├──/motor_control
+|   |   ├── motor_control.h / .c    # Hardware-independent, high-level logic (e.g., speed control, commutation logic)
+|   |   ├── motor_hal.h / .c        # Hardware Abstraction Layer (HAL): wraps low-level functions (PWM, GPIO, SPI)
+|   |   └── motor_types.h           # Common enums, structs, typedefs shared across the module
+│   |
+|   ├── encoder.c                  # AS5080A SPI read logic
 │   ├── pwm_driver.c               # PWM setup and control
 │   ├── utils.c                    # Optional: general utilities (e.g. angle math)
 │
 ├── lib/                            # Header files (.h)
-│   ├── motor_control.h
-│   ├── encoder.h
-│   ├── pwm_driver.h
 │   ├── utils.h
 │
 ├── build/                          # CMake build output (ignored by git)
@@ -20,3 +21,5 @@ BLDC_testApp/
 │
 ├── README.md                       # Project documentation
 ├── .gitignore                      # If using git
+
+

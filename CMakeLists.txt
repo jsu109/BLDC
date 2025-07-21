@@ -1,15 +1,10 @@
-# Generated CMake Pico project file
-
 cmake_minimum_required(VERSION 3.13)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Initialise pico_sdk from installed location
-# (note this can come from environment, CMake cache etc)
-
-# == DO NOT EDIT THE FOLLOWING LINES for the Raspberry Pi Pico VS Code Extension to work ==
+# === VSCode Integration (Don't touch this section) ===
 if(WIN32)
     set(USERHOME $ENV{USERPROFILE})
 else()
@@ -22,44 +17,55 @@ set(picoVscode ${USERHOME}/.pico-sdk/cmake/pico-vscode.cmake)
 if (EXISTS ${picoVscode})
     include(${picoVscode})
 endif()
-# ====================================================================================
-set(PICO_BOARD pico CACHE STRING "Board type")
+# ==========================================
 
-# Pull in Raspberry Pi Pico SDK (must be before project)
+set(PICO_BOARD pico CACHE STRING "Board type")
 include(pico_sdk_import.cmake)
 
 project(BLDC_testApp C CXX ASM)
-
-# Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
 
-# === Add executable with src files ===
-file(GLOB_RECURSE APP_SOURCES
-    "${CMAKE_CURRENT_LIST_DIR}/src/*.c"
+# === Add application source ===
+add_executable(BLDC_testApp
+    src/main.c
 )
 
-add_executable(BLDC_testApp ${APP_SOURCES})
+# === Add motor_control module ===
+add_library(motor_control STATIC
+    src/motor_control/motor_control.c
+)
 
-pico_set_program_name(BLDC_testApp "BLDC_testApp")
-pico_set_program_version(BLDC_testApp "0.1")
+target_include_directories(motor_control PUBLIC
+    ${CMAKE_CURRENT_LIST_DIR}/src/motor_control
+)
 
-# Modify the below lines to enable/disable output over UART/USB
-pico_enable_stdio_uart(BLDC_testApp 0)
-pico_enable_stdio_usb(BLDC_testApp 1)
+target_link_libraries(motor_control
+    motor_hal    # Link to HAL for low-level access
+)
 
-# Add the required Pico libraries
-target_link_libraries(BLDC_testApp
+# === Add motor_hal module ===
+add_library(motor_hal STATIC
+    src/motor_control/motor_hal.c
+)
+
+target_include_directories(motor_hal PUBLIC
+    ${CMAKE_CURRENT_LIST_DIR}/src/motor_control
+)
+
+target_link_libraries(motor_hal
     pico_stdlib
     hardware_pwm
     hardware_spi
     hardware_gpio
 )
 
-# Add include directories
-target_include_directories(BLDC_testApp PRIVATE
-    ${CMAKE_CURRENT_LIST_DIR}/src
-    ${CMAKE_CURRENT_LIST_DIR}/lib
+# === Link everything to the main app ===
+target_link_libraries(BLDC_testApp
+    pico_stdlib
+    motor_control
 )
 
-# Generate .uf2, .bin, etc.
+# === Output settings ===
+pico_enable_stdio_uart(BLDC_testApp 0)
+pico_enable_stdio_usb(BLDC_testApp 1)
 pico_add_extra_outputs(BLDC_testApp)
