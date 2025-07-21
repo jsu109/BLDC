@@ -1,7 +1,8 @@
 #ifndef MOTOR_CONTROL_H
 #define MOTOR_CONTROL_H
 
-// planning
+#include "motor_hal.h"
+// planning 
 /*This module is a high level module which is hardware independent. will talk only 
 to motor_hal.h not directly to GPIO or SPI or PWM. 
 This module will achieve the following functionality:
