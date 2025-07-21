@@ -1,0 +1,22 @@
+BLDC_testApp/
+├── CMakeLists.txt                  # Top-level CMake file
+├── pico_sdk_import.cmake          # SDK import file (as per Pico setup)
+│
+├── src/                            # Application source files (.c)
+│   ├── main.c                      # Entry point
+│   ├── motor_control.c            # 6-step commutation, DRV8317 logic
+│   ├── encoder.c                  # AS5080A SPI read logic
+│   ├── pwm_driver.c               # PWM setup and control
+│   ├── utils.c                    # Optional: general utilities (e.g. angle math)
+│
+├── lib/                            # Header files (.h)
+│   ├── motor_control.h
+│   ├── encoder.h
+│   ├── pwm_driver.h
+│   ├── utils.h
+│
+├── build/                          # CMake build output (ignored by git)
+│   └── ...
+│
+├── README.md                       # Project documentation
+├── .gitignore                      # If using git

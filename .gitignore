@@ -1,0 +1,13 @@
+build
+# VS Code
+.vscode/
+
+# macOS
+.DS_Store
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+compile_commands.json
