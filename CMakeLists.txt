@@ -29,6 +29,13 @@ pico_sdk_init()
 add_executable(BLDC_testApp
     src/main.c
 )
+# === Add SPI_HAL ===
+add_library(spi_hal STATIC 
+    src/spi/spi_hal.c
+) 
+target_link_directories(spi_hal PUBLIC 
+    ${CMAKE_CURRENT_LIST_DIR}/src/spi
+)
 
 # === Add motor_control module ===
 add_library(motor_control STATIC
@@ -55,7 +62,7 @@ target_include_directories(motor_hal PUBLIC
 target_link_libraries(motor_hal
     pico_stdlib
     hardware_pwm
-    hardware_spi
+    spi_hal
     hardware_gpio
 )
 
@@ -63,6 +70,7 @@ target_link_libraries(motor_hal
 target_link_libraries(BLDC_testApp
     pico_stdlib
     motor_control
+    
 )
 
 # === Output settings ===
