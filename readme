@@ -23,3 +23,14 @@ BLDC_testApp/
 ├── .gitignore                      # If using git
 
 
+Issues: 
+#01 Add hardware PWM implementation in motor_hal using hardware_pwm
+    - void motor_hal_pwm_init(uint8_t phase);
+    # Initialize PWM for a given motor phase.
+    - void motor_hal_set_pwm(uint8_t phase, float duty_cycle);
+    #Set duty cycle for a motor phase in the range [0.0, 1.0].
+    - void motor_hal_pwm_enable(uint8_t phase);
+    #Enable PWM output for a phase.
+    - void motor_hal_pwm_disable(uint8_t phase);
+    #Disable PWM output for a phase.
+
