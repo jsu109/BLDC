@@ -49,7 +49,7 @@ GPIO_settings_t AS5048A_CS_settings = {
 
 
 // declare spi and gpio instances used for AS5048A
-SPI_hal_t AS5048A_spiInst;  //spi0 -> 
+SPI_hal_t AS5048A_spiInst;  //spi0 ->
 GPIO_hal_t AS5048A_SCK_gpioInst; //SCK pin
 GPIO_hal_t AS5048A_TX_gpioInst; //TX pin
 GPIO_hal_t AS5048A_RX_gpioInst; //RX pin
@@ -57,9 +57,12 @@ GPIO_hal_t AS5048A_CS_gpioInst; //CS pin
     
  void AS5048AInit(void)
 {
-    // Initialization for AS5048A
-
-    
+    // Initialization settings
+    AS5048A_spiInst.settings = AS5048A_spiSettings;
+    AS5048A_SCK_gpioInst.settings = AS5048A_SCK_settings;
+    AS5048A_TX_gpioInst.settings = AS5048A_TX_settings;
+    AS5048A_RX_gpioInst.settings = AS5048A_RX_settings;
+    AS5048A_CS_gpioInst.settings = AS5048A_CS_settings;
 
     //initalise GPIO being used for AS5048A
     gpio_hal_init(&AS5048A_SCK_gpioInst,&AS5048A_SCK_settings);
@@ -85,17 +88,22 @@ uint16_t AS5048AReadAngle() {
     // Construct the command with required flags
     uint16_t command = AS5048A_ANGLE_REG | AS5048A_PARITY | AS5048A_RW;
     uint16_t result = 0;
+    AS5048A_spiInst.data.cmd = command;
+    AS5048A_spiInst.data.res = result;
+    AS5048A_spiInst.data.len = 1;
+    AS5048A_spiInst.data.RW = 0;  //read
 
     // Assert chip select (active low)
-        gpio_hal_put(&AS5048A_CS_gpioInst,&AS5048A_CS_settings,0);
+    gpio_hal_put(&AS5048A_CS_gpioInst,&AS5048A_CS_gpioInst.settings,0);
 
     // Send the command and read the response
-    spi_hal_transfer16(&AS5048A_spiInst,&AS5048A_spiSettings,command,&result);
+    spi_hal_transfer16(&AS5048A_spiInst,&AS5048A_spiInst.settings,&AS5048A_spiInst.data);
 
     // Deassert chip select
-    gpio_hal_put(&AS5048A_CS_gpioInst,&AS5048A_CS_settings,1);
-
+    gpio_hal_put(&AS5048A_CS_gpioInst,&AS5048A_CS_gpioInst.settings,1);
     // Mask the result to retrieve only the relevant bits (14-bit angle)
+    result = AS5048A_spiInst.data.res;
+
     return result & AS5048A_RESULT_MASK;
 }
 
