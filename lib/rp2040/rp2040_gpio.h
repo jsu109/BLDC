@@ -8,6 +8,7 @@
 
 void rp2040_gpio_init( GPIO_settings_t *settings);
 
+void rp2040_gpio_put( GPIO_settings_t *settings, bool val);
 
 
 #endif 

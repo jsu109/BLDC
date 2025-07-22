@@ -9,8 +9,9 @@
 #define AS5048A_PARITY 0x8000
 #define AS5048A_DATA_BITS 16
 #define AS5048A_BITORDER 1//MSB FIRST
-
-
+#define SPI0_CSn 6
+#define AS5048A_SPI_INSTANCE spi0
+#define AS5048A_CS SPI0_CSn
 void AS5048AInit(void);
 void AS5048ASetConfigReg(void);
 void AS5048AReadAngleMeasurement(void);

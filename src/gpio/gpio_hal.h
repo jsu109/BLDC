@@ -19,10 +19,11 @@ typedef struct {
     GPIO_settings_t settings;
 
     void (*init)(GPIO_settings_t *);
+    void (*put)(GPIO_settings_t *, bool);
 } GPIO_hal_t;
 
 void GPIO_hal_init(GPIO_hal_t *gpioInstance, GPIO_settings_t *gpioSettings);
-
+void GPIO_hal_set(GPIO_hal_t *gpioInstance, GPIO_settings_t *gpioSettings);
 
 
 #endif

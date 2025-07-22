@@ -1,6 +1,7 @@
 #include "stdint.h"
 #include "AS5048A.h"
 #include "spi_hal.h"
+#include "gpio_hal.h"
 
 typedef struct {
     
@@ -18,11 +19,12 @@ static AS5048A_t AS5048A;
     .order = AS5048A_BITORDER,
     .cpol = 0,
     .cpha = 0,
-    .hw_handle = spi0
+    .hw_handle = AS5048A_SPI_INSTANCE
     };
     SPI_hal_t AS5048A_spiInst;
     spi_hal_init(&AS5048A_spiInst, &AS5048A_spiSettings);
     spi_hal_config(&AS5048A_spiInst,&AS5048A_spiSettings);
+    gpio_hal_init(AS5048A_CS,GPIO_FUNC_SPI);
 }
 
  void AS5048ASetConfigReg(void) 
