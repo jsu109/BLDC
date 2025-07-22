@@ -21,6 +21,7 @@ static AS5048A_t AS5048A;
     .order = AS5048A_BITORDER,
     .cpol = 0,
     .cpha = 1,
+    .cpha = 1,
     .hw_handle = AS5048A_SPI_INSTANCE
     };
 
@@ -63,7 +64,7 @@ static AS5048A_t AS5048A;
     gpio_hal_init(&AS5048A_TX_gpioInst,&AS5048A_TX_settings);
     gpio_hal_init(&AS5048A_RX_gpioInst,&AS5048A_RX_settings);
     gpio_hal_init(&AS5048A_CS_gpioInst,&AS5048A_CS_settings);
-    
+
     //initalise SPI for AS5048A
     spi_hal_init(&AS5048A_spiInst, &AS5048A_spiSettings);
     spi_hal_config(&AS5048A_spiInst,&AS5048A_spiSettings);
