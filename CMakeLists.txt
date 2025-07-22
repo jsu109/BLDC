@@ -29,12 +29,47 @@ pico_sdk_init()
 add_executable(BLDC_testApp
     src/main.c
 )
-# === Add SPI_HAL ===
-add_library(spi_hal STATIC 
-    src/spi/spi_hal.c
-) 
-target_link_directories(spi_hal PUBLIC 
+
+# === Add rp2040 library (platform specific code) ===
+add_library(rp2040 STATIC
+    lib/rp2040/rp2040_spi.c
+    # Add other RP2040-specific source files here as needed
+)
+
+target_include_directories(rp2040 PUBLIC
+    ${CMAKE_CURRENT_LIST_DIR}/lib/rp2040
+    ${CMAKE_CURRENT_LIST_DIR}/lib/rp2040/spi
     ${CMAKE_CURRENT_LIST_DIR}/src/spi
+)
+
+# === Add spi_hal library (generic HAL interface) ===
+add_library(spi_hal STATIC
+    src/spi/spi_hal.c
+)
+
+target_include_directories(spi_hal PUBLIC
+    ${CMAKE_CURRENT_LIST_DIR}/src/spi
+)
+
+target_link_libraries(spi_hal
+    rp2040
+    pico_stdlib
+)
+
+# === Add motor_hal module ===
+add_library(motor_hal STATIC
+    src/motor_control/motor_hal.c
+)
+
+target_include_directories(motor_hal PUBLIC
+    ${CMAKE_CURRENT_LIST_DIR}/src/motor_control
+)
+
+target_link_libraries(motor_hal
+    pico_stdlib
+    hardware_pwm
+    spi_hal
+    hardware_gpio
 )
 
 # === Add motor_control module ===
@@ -47,35 +82,13 @@ target_include_directories(motor_control PUBLIC
 )
 
 target_link_libraries(motor_control
-    motor_hal    # Link to HAL for low-level access
-)
-
-# === Add motor_hal module ===
-add_library(motor_hal STATIC
-    src/motor_control/motor_hal.c
-)
-
-target_include_directories(motor_hal PUBLIC
-    ${CMAKE_CURRENT_LIST_DIR}/src/motor_control
-)
-
-target_link_libraries(spi_hal
-    pico_stdlib
-    hardware_spi
-)
-
-target_link_libraries(motor_hal
-    pico_stdlib
-    hardware_pwm
-    spi_hal
-    hardware_gpio
+    motor_hal
 )
 
 # === Link everything to the main app ===
 target_link_libraries(BLDC_testApp
     pico_stdlib
     motor_control
-    
 )
 
 # === Output settings ===

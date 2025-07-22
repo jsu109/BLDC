@@ -3,6 +3,13 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+
+typedef enum
+{
+    DEFAULT,
+    RP2040,
+    // Add other sensor IDs here
+} sysType_t;
 typedef struct 
 {
     int16_t baudrate;
@@ -22,8 +29,10 @@ typedef struct
 
 
 
-void spi_hal_init(SPI_hal_t *spiInstance, SPI_settings_t *spiSetting);
+void spi_hal_init(sysType_t sysType, SPI_hal_t *spiInstance);
 
 void spi_hal_config(SPI_hal_t *spiInstance, SPI_settings_t *spiSettings);
+
+uint8_t spi_hal_transfer8(SPI_hal_t *spiInstance, uint8_t data);
 
 #endif
