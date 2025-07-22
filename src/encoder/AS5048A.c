@@ -73,7 +73,8 @@ static AS5048A_t AS5048A;
  void AS5048ASetConfigReg(void) 
 {
     // configure settings in AS5048A
-   
+ 
+    
 }
 
  void AS5048AReadAngleMeasurement(void) 
