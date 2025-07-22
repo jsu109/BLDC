@@ -46,10 +46,11 @@ uint16_t spi_hal_transfer16(SPI_hal_t *spiInstance, SPI_settings_t *spiSettings,
         return spiInstance->transfer16(spiSettings,spiData);
     }
 }
-void spi_hal_updateData(SPI_hal_t *spiInstance, uint16_t cmd, uint16_t res, uint8_t len,bool RW)
+uint16_t spi_hal_updateDataAndTransfer(SPI_hal_t *spiInstance, uint16_t cmd, uint16_t res, uint8_t len,bool RW)
 {
     spiInstance->data.cmd = cmd;
     spiInstance->data.res = res;
     spiInstance->data.len = len;
     spiInstance->data.RW = RW;
+    return spi_hal_transfer16(spiInstance, &spiInstance->settings, &spiInstance->data);
 }

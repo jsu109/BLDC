@@ -15,6 +15,7 @@ uint16_t rp2040_spi_transfer16(SPI_settings_t *settings, SPI_data_t *spiData) {
     switch (spiData->RW) {
         case 0:
             return spi_read16_blocking(spi,spiData->cmd, &spiData->res, spiData->len);
+            
         case 1:
             spi_write16_blocking(spi,&spiData->cmd, spiData->len);
             return 0;
