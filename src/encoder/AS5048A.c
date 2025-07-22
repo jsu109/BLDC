@@ -90,7 +90,7 @@ uint16_t AS5048AReadAngle() {
         gpio_hal_put(&AS5048A_CS_gpioInst,&AS5048A_CS_settings,0);
 
     // Send the command and read the response
-    spi_read16_blocking(SPI_PORT, command, &result, 1);
+    spi_hal_transfer16(&AS5048A_spiInst,&AS5048A_spiSettings,command,&result);
 
     // Deassert chip select
     gpio_hal_put(&AS5048A_CS_gpioInst,&AS5048A_CS_settings,1);
