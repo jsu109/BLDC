@@ -18,7 +18,7 @@ void gpio_hal_init(GPIO_hal_t *gpioInstance, GPIO_settings_t *gpioSettings)
     }
 } 
 
-void gpio_hal_set(GPIO_hal_t *gpioInstance, GPIO_settings_t *gpioSettings, bool val)
+void gpio_hal_put(GPIO_hal_t *gpioInstance, GPIO_settings_t *gpioSettings, bool val)
 {
     switch(gpioSettings->sysType) {
         case RP2040:
