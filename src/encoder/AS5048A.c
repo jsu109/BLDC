@@ -107,8 +107,69 @@ uint16_t AS5048AReadAngle() {
     return result & AS5048A_RESULT_MASK;
 }
 
- float AS5048AProcessAngleMeasurement(void) 
+
+void setZero()
 {
-    // Implementation of the function
+    // Step 1: Construct commands for ZPOSM and ZPOSL
+    uint16_t zposm_command = AS5048A_OTPHIGH_REG | !AS5048A_RW;  // Write command for MSB
+    zposm_command |= calculate_parity(zposm_command);           // Add parity bit
+
+    uint16_t zposl_command = AS5048A_OTPLOW_REG | !AS5048A_RW;  // Write command for LSB
+    zposl_command |= calculate_parity(zposl_command);           // Add parity bit
+
+    // Step 2: Write 0x0000 to OTP registers to clear previous zero position
+    gpio_hal_put(&AS5048A_CS_gpioInst,&AS5048A_CS_gpioInst.settings,0);  // Assert chip select (active low)
     
+    spi_hal_updateData(&AS5048A_spiInst,zposm_command,NULL,1,WRITE);
+    spi_hal_transfer16(&AS5048A_spiInst,&AS5048A_spiInst.settings,&AS5048A_spiInst.data);
+    
+    spi_hal_updateData(&AS5048A_spiInst,0x0000,NULL,1,WRITE); //clear MSB
+    spi_hal_transfer16(&AS5048A_spiInst,&AS5048A_spiInst.settings,&AS5048A_spiInst.data);
+
+    gpio_hal_put(&AS5048A_CS_gpioInst,&AS5048A_CS_gpioInst.settings,1);  // Deassert chip select
+
+    gpio_hal_put(&AS5048A_CS_gpioInst,&AS5048A_CS_gpioInst.settings,0);  // Assert chip select again
+    spi_hal_updateData(&AS5048A_spiInst,zposl_command,NULL,1,WRITE); //clear MSB
+    spi_hal_updateData(&AS5048A_spiInst,0x0000,NULL,1,WRITE);  // Clear LSB
+    gpio_hal_put(&AS5048A_CS_gpioInst,&AS5048A_CS_gpioInst.settings,1);  // Deassert chip select
+
+    // Step 3: Read the current angle from the sensor
+    uint16_t current_angle = as5048aReadAngle();
+
+    // Step 4: Write the current angle to OTP registers to set new zero position
+    gpio_hal_put(&AS5048A_CS_gpioInst,&AS5048A_CS_gpioInst.settings,0);  // Assert chip select (active low)
+    spi_hal_updateData(&AS5048A_spiInst,zposm_command,NULL,1,WRITE);
+    spi_hal_transfer16(&AS5048A_spiInst,&AS5048A_spiInst.settings,&AS5048A_spiInst.data);
+    
+    spi_hal_updateData(&AS5048A_spiInst,current_angle,NULL,1,WRITE); 
+    spi_hal_transfer16(&AS5048A_spiInst,&AS5048A_spiInst.settings,&AS5048A_spiInst.data);
+
+    gpio_hal_put(&AS5048A_CS_gpioInst,&AS5048A_CS_gpioInst.settings,1);  // Deassert chip select
+
+    gpio_hal_put(&AS5048A_CS_gpioInst,&AS5048A_CS_gpioInst.settings,0);  // Assert chip select again
+    spi_hal_updateData(&AS5048A_spiInst,zposl_command,NULL,1,WRITE);
+    spi_hal_transfer16(&AS5048A_spiInst,&AS5048A_spiInst.settings,&AS5048A_spiInst.data);
+    
+    spi_hal_updateData(&AS5048A_spiInst,current_angle,NULL,1,WRITE); 
+    spi_hal_transfer16(&AS5048A_spiInst,&AS5048A_spiInst.settings,&AS5048A_spiInst.data);   // Write LSB
+    gpio_hal_put(&AS5048A_CS_gpioInst,&AS5048A_CS_gpioInst.settings,1);  // Deassert chip select
+
+    // Step 5: Burn the zero position data to OTP
+    gpio_hal_put(&AS5048A_CS_gpioInst,&AS5048A_CS_gpioInst.settings,0);  // Assert chip select (active low)
+    uint16_t otp_control_command = AS5048A_PROGCTL_REG | AS5048A_PROGRAM_ENABLE;  // Enable OTP programming
+    otp_control_command |= calculate_parity(otp_control_command);  // Add parity bit
+    spi_hal_updateData(&AS5048A_spiInst,otp_control_command,NULL,1,WRITE);
+    spi_hal_transfer16(&AS5048A_spiInst,&AS5048A_spiInst.settings,&AS5048A_spiInst.data);  // Enable programming
+    otp_control_command |= AS5048A_BURN;  // Set the Burn bit
+    spi_hal_updateData(&AS5048A_spiInst,otp_control_command,NULL,1,WRITE);
+    spi_hal_transfer16(&AS5048A_spiInst,&AS5048A_spiInst.settings,&AS5048A_spiInst.data); // Start burning OTP
+    
+    gpio_hal_put(&AS5048A_CS_gpioInst,&AS5048A_CS_gpioInst.settings,1);  // Deassert chip select
+
+    // Step 6: Read angle after programming to check if zero position is set
+    uint16_t angle_after_burn = as5048aReadAngle();
+    if (angle_after_burn != 0) {
+        printf("Error: Angle after burn is not 0. Zero position setting failed.\n");
+        return;
+    }
 }

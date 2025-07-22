@@ -3,7 +3,7 @@
 
 
 // #define 
-#define AS5048A_ANGLE_REG 0xFFF
+#define AS5048A_ANGLE_REG 0x3FFF
 #define AS5048A_MAGNUTUDE_REG 0xFFE
 #define AS5048A_RW 0x4000
 #define AS5048A_PARITY 0x8000
@@ -17,7 +17,6 @@
 
 
 #define AS5048A_CPR 16384
-#define AS5048A_ANGLE_REG 0x3FFF
 #define AS5048A_ERROR_REG 0x0001
 #define AS5048A_PROGCTL_REG 0x0003
 #define AS5048A_OTPHIGH_REG 0x0016
@@ -33,6 +32,9 @@
 #define AS5048A_BURN 0x08
 #define AS5048A_VERIFY 0x0040
 #define AS5048A_ANGLE_CMD 0xFFFF
+
+#define WRITE 1
+#define READ 0
 
 void AS5048AInit(void);
 void AS5048ASetConfigReg(void);
