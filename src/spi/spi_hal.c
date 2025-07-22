@@ -32,7 +32,7 @@ void spi_hal_config(SPI_hal_t *spiInstance, SPI_settings_t *spiSettings)
 }
 
 // Transfer 16 bits of data via SPI, calls platform-specific transfer16 function pointer
-uint16_t spi_hal_transfer16(SPI_hal_t *spiInstance, SPI_settings_t *spiSettings, uint16_t data)
+uint16_t spi_hal_transfer16(SPI_hal_t *spiInstance, SPI_settings_t *spiSettings, uint16_t command, uint16_t *result)
 {
     switch(spiSettings->sysType) {
         case RP2040:
@@ -43,6 +43,6 @@ uint16_t spi_hal_transfer16(SPI_hal_t *spiInstance, SPI_settings_t *spiSettings,
     }
 
     if(spiInstance->transfer16) {
-        return spiInstance->transfer16(data,spiSettings);
+        return spiInstance->transfer16(command,result,spiSettings);
     }
 }

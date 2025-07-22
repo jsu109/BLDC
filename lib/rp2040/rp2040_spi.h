@@ -10,7 +10,7 @@ void rp2040_spi_init( SPI_settings_t *settings);
 void rp2040_spi_setFormat( SPI_settings_t *settings);
 
 
-uint16_t rp2040_spi_transfer16(uint16_t data,  SPI_settings_t *settings);
+uint16_t rp2040_spi_transfer16(uint16_t command, uint16_t *result, SPI_settings_t *settings);
 
 
 #endif 
