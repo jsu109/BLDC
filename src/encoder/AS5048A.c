@@ -106,7 +106,16 @@ uint16_t AS5048AReadAngle() {
 
     return result & AS5048A_RESULT_MASK;
 }
-
+// Function to calculate parity (odd parity)
+uint16_t calculate_parity(uint16_t data) {
+    uint16_t parity = 0;
+    for (int i = 0; i < 15; i++) { // Ignore MSB
+        if (data & (1 << i)) {
+            parity ^= 1;
+        }
+    }
+    return (parity << 15); // Parity bit at MSB
+}
 
 void setZero()
 {
