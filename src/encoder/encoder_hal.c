@@ -14,7 +14,7 @@ bool encoderHalInit(encoderId_t id, encoderHal_t *hal)
         case encoder_ID_AS5048A:
             hal->init = AS5048AInit;
             hal->config = AS5048ASetConfigReg;
-            hal->read = AS5048AReadAngleMeasurement;
+            hal->read = AS5048AReadAngle;
             hal->process = AS5048AProcessAngleMeasurement;
             
             hal->init();
@@ -40,12 +40,12 @@ void encoderHalSetConfig(encoderHal_t *hal)
 {
     hal->config();
 }
-void encoderHalReadAngleMeasurement(encoderHal_t *hal)
+uint16_t encoderHalReadAngleMeasurement(encoderHal_t *hal)
 {
-    hal->read();
+    return hal->read();
 }
-float encoderHalProcessMeasurement(encoderHal_t *hal)
+float encoderHalProcessMeasurement(encoderHal_t *hal, uint16_t angle)
 {
-    return hal->process();
+   return hal->process(angle);
 }
 

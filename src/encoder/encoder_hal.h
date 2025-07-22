@@ -15,13 +15,13 @@ typedef struct
 {
     void (*init)(void);
     void (*config)(void);
-    void (*read)(void);
-    float (*process)(void);
+    uint16_t (*read)(void);
+    float (*process)(uint16_t );
 } encoderHal_t;
 
 bool encoderHalInit(encoderId_t id, encoderHal_t *hal);
 void encoderHalSetConfig(encoderHal_t *hal);
-void encoderHalReadAngleMeasurement(encoderHal_t *hal);
-float encoderHalProcessMeasurement(encoderHal_t *hal);
+uint16_t encoderHalReadAngleMeasurement(encoderHal_t *hal);
+float encoderHalProcessMeasurement(encoderHal_t *hal, uint16_t angle);
 
 #endif  // encoder_HAL_H

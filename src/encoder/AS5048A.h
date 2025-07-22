@@ -38,8 +38,8 @@
 
 void AS5048AInit(void);
 void AS5048ASetConfigReg(void);
-void AS5048AReadAngleMeasurement(void);
-float AS5048AProcessAngleMeasurement(void);
+uint16_t AS5048AReadAngle(void);
+float AS5048AProcessAngleMeasurement(uint16_t angle);
 
 
 

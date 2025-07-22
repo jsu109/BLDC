@@ -12,13 +12,12 @@ static AS5048A_t AS5048A;
 //define settings for SPI 
 SPI_settings_t AS5048A_spiSettings = {
 .sysType = RP2040,
-.baudrate = 80000,
+.baudrate = 1000000, //1Mhz
 .dataBits = AS5048A_DATA_BITS,
 .order = AS5048A_BITORDER,
 .cpol = 0,
 .cpha = 1,
-.cpha = 1,
-.hw_handle = AS5048A_SPI_INSTANCE
+.hw_handle = AS5048A_SPI_INSTANCE //spi0
 };
 
 //define GPIO settings for gpio pins being used
@@ -44,7 +43,7 @@ GPIO_settings_t AS5048A_CS_settings = {
     .sysType = RP2040,
     .gpioPin = AS5048A_CS,
     .out = 0,
-    .gpioFunction = GPIO_FUNC_SPI,
+    .gpioFunction = GPIO_FUNC_SPI, //else try NULL
 };
 
 
@@ -104,6 +103,11 @@ uint16_t AS5048AReadAngle() {
     result = AS5048A_spiInst.data.res;
 
     return result & AS5048A_RESULT_MASK;
+}
+
+float AS5048AProcessAngleMeasurement (uint16_t angle) 
+{
+    return (angle * 360.0f)/16384.0f;
 }
 // Function to calculate parity (odd parity)
 uint16_t calculate_parity(uint16_t data) {
