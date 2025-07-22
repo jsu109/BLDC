@@ -4,13 +4,13 @@
 #include <stdint.h>
 #include "spi_hal.h"
 
-void rp2040_spi_init(void);
+void rp2040_spi_init( SPI_settings_t *settings);
 
 
-void rp2040_spi_setFormat(const SPI_settings_t *settings);
+void rp2040_spi_setFormat( SPI_settings_t *settings);
 
 
-uint16_t rp2040_spi_transfer16(uint16_t data);
+uint16_t rp2040_spi_transfer16(uint16_t data,  SPI_settings_t *settings);
 
 
 #endif 
