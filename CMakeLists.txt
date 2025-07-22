@@ -78,12 +78,21 @@ target_link_libraries(spi_hal
 add_library(motor_hal STATIC
     src/motor_control/motor_hal.c
 )
-
 target_include_directories(motor_hal PUBLIC
     ${CMAKE_CURRENT_LIST_DIR}/src/motor_control
 )
 
+# === Add encoder_hal module ===
+add_library(encoder_hal STATIC
+    src/encoder/encoder_hal.c
+)
+target_include_directories(encoder_hal PUBLIC
+    ${CMAKE_CURRENT_LIST_DIR}/src/encoder
+)
+
+# === Link dependencies to motor_hal ===
 target_link_libraries(motor_hal
+    encoder_hal
     pico_stdlib
     hardware_pwm
     spi_hal
@@ -106,7 +115,8 @@ target_link_libraries(motor_control
 # === Link everything to the main app ===
 target_link_libraries(BLDC_testApp
     pico_stdlib
-    motor_control
+    motor_hal
+    encoder_hal
 )
 
 # === Output settings ===
