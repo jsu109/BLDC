@@ -11,6 +11,7 @@ typedef enum {
 } sysType_t;
 typedef struct {
     uint8_t gpioPin;
+    bool out;
     sysType_t sysType;
     void *gpioFunction;
 } GPIO_settings_t;
