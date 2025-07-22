@@ -59,6 +59,11 @@ target_include_directories(motor_hal PUBLIC
     ${CMAKE_CURRENT_LIST_DIR}/src/motor_control
 )
 
+target_link_libraries(spi_hal
+    pico_stdlib
+    hardware_spi
+)
+
 target_link_libraries(motor_hal
     pico_stdlib
     hardware_pwm
