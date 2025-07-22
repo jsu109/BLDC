@@ -57,6 +57,7 @@ target_include_directories(rp2040 PUBLIC
     ${CMAKE_CURRENT_LIST_DIR}/lib/rp2040/gpio
     ${CMAKE_CURRENT_LIST_DIR}/src/spi
     ${CMAKE_CURRENT_LIST_DIR}/src/gpio
+    ${CMAKE_CURRENT_LIST_DIR}/lib
 )
 
 target_link_libraries(rp2040
@@ -69,6 +70,7 @@ add_library(gpio_hal STATIC
 )
 
 target_include_directories(gpio_hal PUBLIC
+    ${CMAKE_CURRENT_LIST_DIR}/lib
     ${CMAKE_CURRENT_LIST_DIR}/src/gpio
 )
 
@@ -84,6 +86,7 @@ add_library(spi_hal STATIC
 
 target_include_directories(spi_hal PUBLIC
     ${CMAKE_CURRENT_LIST_DIR}/src/spi
+    ${CMAKE_CURRENT_LIST_DIR}/lib
 )
 
 target_link_libraries(spi_hal
@@ -102,11 +105,17 @@ target_include_directories(motor_hal PUBLIC
 # === Add encoder_hal module ===
 add_library(encoder_hal STATIC
     src/encoder/encoder_hal.c
+    src/encoder/AS5048A.c
 )
 target_include_directories(encoder_hal PUBLIC
     ${CMAKE_CURRENT_LIST_DIR}/src/encoder
+    ${CMAKE_CURRENT_LIST_DIR}/src/gpio
 )
-
+target_link_libraries(encoder_hal
+    gpio_hal
+    pico_stdlib
+    spi_hal
+)
 # === Link dependencies to motor_hal ===
 target_link_libraries(motor_hal
     encoder_hal

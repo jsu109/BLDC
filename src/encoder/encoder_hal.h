@@ -13,6 +13,7 @@ typedef enum
 
 typedef struct
 {
+    encoderId_t id; 
     void (*init)(void);
     void (*config)(void);
     uint16_t (*read)(void);

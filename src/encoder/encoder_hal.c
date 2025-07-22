@@ -1,12 +1,13 @@
 #include "encoder_hal.h"
 #include "AS5048A.h"
-
+#include "pico/stdlib.h"
 #include "stddef.h"
 
 
 
 bool encoderHalInit(encoderId_t id, encoderHal_t *hal) 
 {
+    gpio_put(25,0);
     if (hal != NULL) {
     
         switch (id)
@@ -16,8 +17,6 @@ bool encoderHalInit(encoderId_t id, encoderHal_t *hal)
             hal->config = AS5048ASetConfigReg;
             hal->read = AS5048AReadAngle;
             hal->process = AS5048AProcessAngleMeasurement;
-            
-            hal->init();
             break;
         
         default:
@@ -28,6 +27,7 @@ bool encoderHalInit(encoderId_t id, encoderHal_t *hal)
             hal->process = NULL;
             break;
         }
+        hal->init();
         return 0;
 
     } 

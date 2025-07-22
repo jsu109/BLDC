@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-
+#include "sysType.h"
 typedef enum {
     SPI_HAL_MSB_FIRST,
     SPI_HAL_LSB_FIRST
@@ -19,10 +19,6 @@ typedef enum {
     SPI_HAL_CPHA_1
 } spi_hal_cpha_t;
 
-typedef enum {
-    RP2040,
-    STM32
-} sysType_t;
 typedef struct {
     int32_t baudrate;
     uint8_t dataBits;
@@ -30,7 +26,7 @@ typedef struct {
     spi_hal_cpol_t cpol;
     spi_hal_cpha_t cpha;
     sysType_t sysType;
-    void *hw_handle; // e.g. pointer to spi0 or spi1
+    uint8_t hw_handle; // e.g. pointer to spi0 or spi1
 } SPI_settings_t;
 
 typedef struct {

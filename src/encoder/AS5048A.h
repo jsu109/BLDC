@@ -9,7 +9,6 @@
 #define AS5048A_PARITY 0x8000
 #define AS5048A_DATA_BITS 16
 #define AS5048A_BITORDER 1//MSB FIRST
-#define AS5048A_SPI_INSTANCE spi0
 #define AS5048A_SCK 18 //GP18 blue
 #define AS5048A_TX 19 //GP19 yellow
 #define AS5048A_RX 16 //GP16 green
