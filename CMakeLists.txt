@@ -47,17 +47,34 @@ add_executable(BLDC_testApp
 # === Add rp2040 library (platform specific code) ===
 add_library(rp2040 STATIC
     lib/rp2040/rp2040_spi.c
+    lib/rp2040/rp2040_gpio.c
     # Add other RP2040-specific source files here as needed
 )
 
 target_include_directories(rp2040 PUBLIC
     ${CMAKE_CURRENT_LIST_DIR}/lib/rp2040
     ${CMAKE_CURRENT_LIST_DIR}/lib/rp2040/spi
+    ${CMAKE_CURRENT_LIST_DIR}/lib/rp2040/gpio
     ${CMAKE_CURRENT_LIST_DIR}/src/spi
+    ${CMAKE_CURRENT_LIST_DIR}/src/gpio
 )
 
 target_link_libraries(rp2040
     hardware_spi
+    hardware_gpio
+)
+# === Add spi_hal library (generic HAL interface) ===
+add_library(gpio_hal STATIC
+    src/gpio/gpio_hal.c
+)
+
+target_include_directories(gpio_hal PUBLIC
+    ${CMAKE_CURRENT_LIST_DIR}/src/gpio
+)
+
+target_link_libraries(gpio_hal
+    rp2040
+    pico_stdlib
 )
 
 # === Add spi_hal library (generic HAL interface) ===
