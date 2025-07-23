@@ -45,12 +45,6 @@ GPIO_settings_t AS5048A_CS_settings = {
     .out = 0,
     .gpioFunction = GPIO_HAL_FUNC_SPI, //else try NULL
 };
-GPIO_settings_t LED_settings = {
-    .sysType = RP2040,
-    .gpioPin = 25,
-    .out = 0,
-    .gpioFunction = GPIO_HAL_FUNC_NULL, //else try NULL
-};
 
 
 // declare spi and gpio instances used for AS5048A
@@ -59,30 +53,31 @@ GPIO_hal_t AS5048A_SCK_gpioInst; //SCK pin
 GPIO_hal_t AS5048A_TX_gpioInst; //TX pin
 GPIO_hal_t AS5048A_RX_gpioInst; //RX pin
 GPIO_hal_t AS5048A_CS_gpioInst; //CS pin
-GPIO_hal_t LED; //LED pin
+
     
  void AS5048AInit(void)
 {
     // Initialization settings
-    LED.settings = LED_settings;
     AS5048A_spiInst.settings = AS5048A_spiSettings;
     AS5048A_SCK_gpioInst.settings = AS5048A_SCK_settings;
     AS5048A_TX_gpioInst.settings = AS5048A_TX_settings;
     AS5048A_RX_gpioInst.settings = AS5048A_RX_settings;
     AS5048A_CS_gpioInst.settings = AS5048A_CS_settings;
     
-    gpio_hal_init(&LED,&LED_settings);
-    gpio_hal_put(&LED,&LED_settings,0);
     //initalise GPIO being used for AS5048A
-    gpio_hal_init(&AS5048A_SCK_gpioInst,&AS5048A_SCK_settings);
-    gpio_hal_init(&AS5048A_TX_gpioInst,&AS5048A_TX_settings);
-    gpio_hal_init(&AS5048A_RX_gpioInst,&AS5048A_RX_settings);
-    gpio_hal_init(&AS5048A_CS_gpioInst,&AS5048A_CS_settings);
-    gpio_hal_put(&AS5048A_CS_gpioInst,&AS5048A_CS_settings,1);
+    AS5048A_SCK_gpioInst.init(&AS5048A_SCK_settings);
+    AS5048A_TX_gpioInst.init(&AS5048A_TX_settings);
+    AS5048A_RX_gpioInst.init(&AS5048A_RX_settings);
+    AS5048A_CS_gpioInst.init(&AS5048A_CS_settings);
+    
+    AS5048A_CS_gpioInst.put(&AS5048A_SCK_settings,1);
+    
 
     //initalise SPI for AS5048A
-    spi_hal_init(&AS5048A_spiInst, &AS5048A_spiSettings);
-    spi_hal_config(&AS5048A_spiInst,&AS5048A_spiSettings);
+    
+    AS5048A_spiInst.init(&AS5048A_spiSettings);
+    AS5048A_spiInst.config(&AS5048A_spiSettings);
+    
     
 }
 

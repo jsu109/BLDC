@@ -42,7 +42,7 @@ typedef struct {
     SPI_settings_t settings;
     SPI_data_t data;
     void (*init)(SPI_settings_t *);
-    void (*setFormat)(SPI_settings_t *);
+    void (*config)(SPI_settings_t *);
     uint16_t (*transfer16)(SPI_settings_t *, SPI_data_t*);
 } SPI_hal_t;
 

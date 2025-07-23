@@ -21,13 +21,13 @@ GPIO_settings_t led_settings = {
 int main()
 {
     stdio_init_all();
-    gpio_hal_init(&led,&led_settings);
-    gpio_hal_put(&led,&led_settings,1);
+    led.init(&led_settings);
+    led.put(&led_settings,1);
     encoder1.id = encoder_ID_AS5048A;
     bool res = encoderHalInit(encoder1.id, &encoder1);
     // Timer example code - This example fires off the callback after 2000ms
     // add_alarm_in_ms(2000, alarm_callback, NULL, false);
-    gpio_hal_put(&led,&led_settings,res);
+    led.put(&led_settings,res);
     while (true) {
         uint16_t angle = encoder1.read();
         float angle_degrees = encoder1.process(angle);

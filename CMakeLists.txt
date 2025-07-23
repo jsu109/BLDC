@@ -64,7 +64,8 @@ target_link_libraries(rp2040
     hardware_spi
     hardware_gpio
 )
-# === Add spi_hal library (generic HAL interface) ===
+
+# === Add gpio_hal module ===
 add_library(gpio_hal STATIC
     src/gpio/gpio_hal.c
 )
@@ -79,7 +80,7 @@ target_link_libraries(gpio_hal
     pico_stdlib
 )
 
-# === Add spi_hal library (generic HAL interface) ===
+# === Add spi_hal module ===
 add_library(spi_hal STATIC
     src/spi/spi_hal.c
 )
@@ -119,8 +120,6 @@ target_link_libraries(encoder_hal
 # === Link dependencies to motor_hal ===
 target_link_libraries(motor_hal
     encoder_hal
-    pico_stdlib
-    hardware_pwm
     spi_hal
     hardware_gpio
 )

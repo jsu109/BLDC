@@ -20,14 +20,14 @@ void spi_hal_config(SPI_hal_t *spiInstance, SPI_settings_t *spiSettings)
 {
     switch(spiSettings->sysType) {
         case RP2040:
-            spiInstance->setFormat = rp2040_spi_setFormat;
+            spiInstance->config = rp2040_spi_setFormat;
             break;
         default:
             break;
     }
 
-    if(spiInstance->setFormat) {
-        spiInstance->setFormat(spiSettings);
+    if(spiInstance->config) {
+        spiInstance->config(spiSettings);
     }
 }
 
