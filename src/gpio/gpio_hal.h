@@ -33,11 +33,11 @@ typedef struct {
     GPIO_settings_t settings;
 
     void (*init)(GPIO_settings_t *);
-    void (*put)(GPIO_settings_t *, bool);
+    void (*put)(GPIO_settings_t *gpioInstance, bool);
 } GPIO_hal_t;
 
 void gpio_hal_init(GPIO_hal_t *gpioInstance, GPIO_settings_t *gpioSettings);
-void gpio_hal_put(GPIO_hal_t *gpioInstance, GPIO_settings_t *gpioSettings, bool val);
+void gpio_hal_put(GPIO_hal_t *gpioInstance, bool val);
 
 
 #endif
