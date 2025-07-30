@@ -70,7 +70,7 @@ GPIO_hal_t AS5048A_CS_gpioInst; //CS pin
 
     gpio_hal_init(&AS5048A_CS_gpioInst,&AS5048A_CS_settings);
     
-    gpio_put(AS5048A_CS,1);
+    AS5048A_CS_gpioInst.put(&AS5048A_CS_settings,1);
 
     gpio_set_function(16,GPIO_FUNC_SPI);
     
@@ -80,7 +80,7 @@ GPIO_hal_t AS5048A_CS_gpioInst; //CS pin
 
     //initalise SPI for AS5048A
     spi_hal_init(&AS5048A_spiInst,&AS5048A_spiSettings, &AS5048A_data);
-    // spi_hal_config(&AS5048A_spiInst);
+    AS5048A_spiInst.config(&AS5048A_spiSettings);
     
     
 }
@@ -141,7 +141,6 @@ uint16_t AS5048AReadAngle() {
     gpio_hal_put(&AS5048A_CS_gpioInst, 0); // CS low
     spi_hal_transfer16(&AS5048A_spiInst); //Write
     gpio_hal_put(&AS5048A_CS_gpioInst, 1); // CS high
-    printf("spi read1 cmd, res %d,%d\n", AS5048A_spiInst.data.cmd,AS5048A_spiInst.data.res);
     uint16_t nop = build_command(AS5048A_NOP);  // Applies parity
     AS5048A_spiInst.data.cmd = nop;
     AS5048A_spiInst.data.RW = READ;
@@ -155,7 +154,6 @@ uint16_t AS5048AReadAngle() {
     // gpio_hal_put(&AS5048A_CS_gpioInst,1);
 
     rx = AS5048A_spiInst.data.res;
-    printf("spi read2 cmd, res %d,%d\n", AS5048A_spiInst.data.cmd,AS5048A_spiInst.data.res);
     
     
     return rx & AS5048A_RESULT_MASK;

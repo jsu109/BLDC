@@ -14,6 +14,6 @@ void rp2040_gpio_put(GPIO_settings_t *gpioSettings, bool value)
 {
    
     gpio_put(gpioSettings->gpioPin, value);
-    printf("[HAL] gpio_put(%d, %d)\n", gpioSettings->gpioPin, value);
+    
     
 }

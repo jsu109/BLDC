@@ -24,8 +24,7 @@ void rp2040_spi_init(SPI_settings_t *settings) {
 
 void rp2040_spi_setFormat(SPI_settings_t *settings) {
     spi_inst_t *spi_instance = get_spi_instance(settings->hw_handle);
-    // spi_set_format(spi_instance, settings->dataBits, settings->cpol, settings->cpha, SPI_MSB_FIRST);
-        spi_set_format(spi0,16,false,false,1);
+    spi_set_format(spi_instance, settings->dataBits, settings->cpol, settings->cpha, SPI_MSB_FIRST);
 }
 
 uint16_t rp2040_spi_transfer16(SPI_settings_t *settings, SPI_data_t *spiData) {

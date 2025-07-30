@@ -17,7 +17,6 @@ void spi_hal_init(SPI_hal_t *spiInstance, SPI_settings_t *spiSettings, SPI_data_
 
     if(spiInstance->init) {
         spiInstance->init(spiSettings);
-        spiInstance->config(&spiInstance->settings);
     }
 } 
 
