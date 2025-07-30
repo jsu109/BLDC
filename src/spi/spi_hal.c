@@ -20,3 +20,9 @@ void spi_hal_init(SPI_hal_t *spiInstance, SPI_settings_t *spiSettings, SPI_data_
     }
 } 
 
+void spi_hal_updateData(SPI_hal_t *spiInstance, uint16_t cmd, uint16_t res,uint8_t len,bool RW) {
+    spiInstance->data.cmd = cmd;
+    spiInstance->data.res = res;
+    spiInstance->data.len = len;
+    spiInstance->data.RW = RW;
+}

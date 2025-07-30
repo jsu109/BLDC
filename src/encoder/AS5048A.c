@@ -132,26 +132,19 @@ uint16_t AS5048AReadAngle() {
     uint16_t command = AS5048A_ANGLE_REG | AS5048A_RW;
     uint16_t tx = build_command(command);
     uint16_t rx = 0;
-    AS5048A_spiInst.data.cmd = tx;
-    AS5048A_spiInst.data.res = rx;
-    AS5048A_spiInst.data.len = 1;
-    AS5048A_spiInst.data.RW = WRITE;
-
+    spi_hal_updateData(&AS5048A_spiInst,tx,rx,1,READ);
 
     gpio_hal_put(&AS5048A_CS_gpioInst, 0); // CS low
     AS5048A_spiInst.transfer16(&AS5048A_spiInst); //Write
     gpio_hal_put(&AS5048A_CS_gpioInst, 1); // CS high
     uint16_t nop = build_command(AS5048A_NOP);  // Applies parity
-    AS5048A_spiInst.data.cmd = nop;
-    AS5048A_spiInst.data.RW = READ;
-    AS5048A_spiInst.data.res = 0;
-    AS5048A_spiInst.data.len = 1;
+    spi_hal_updateData(&AS5048A_spiInst,nop,0,1,READ);
     sleep_us(1);
     gpio_hal_put(&AS5048A_CS_gpioInst, 0); // CS low
     // spi_read16_blocking(spi0, AS5048A_NOP, &rx, 1);  // Receive response
     AS5048A_spiInst.transfer16(&AS5048A_spiInst); //read
     gpio_put(AS5048A_CS_gpioInst.settings.gpioPin, 1);
-    // gpio_hal_put(&AS5048A_CS_gpioInst,1);
+    
 
     rx = AS5048A_spiInst.data.res;
     
@@ -161,7 +154,7 @@ uint16_t AS5048AReadAngle() {
 
 float AS5048AProcessAngleMeasurement (uint16_t angle) 
 {
-    return (angle * 360.0f)/(2*16384.0f);
+    return (angle * 360.0f)/16384.0f;
 }
 
 

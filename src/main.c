@@ -43,7 +43,7 @@ int main()
     // led.put(&led.settings,1);
     while (true) {
         // tight_loop_contents();
-    
+        
         uint16_t raw = encoder1.read();
         uint16_t angle = raw & 0x3FFF;
         uint8_t error = (raw >> 14) & 0x1;
