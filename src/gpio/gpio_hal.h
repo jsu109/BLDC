@@ -29,11 +29,12 @@ typedef struct {
     int gpioFunction;
 } GPIO_settings_t;
 
-typedef struct {
+typedef struct GPIO_hal GPIO_hal_t;
+typedef struct GPIO_hal {
     GPIO_settings_t settings;
-
     void (*init)(GPIO_settings_t *);
-    void (*put)(GPIO_settings_t *gpioInstance, bool);
+    void (*put)(GPIO_hal_t *gpioInstance, bool);
+
 } GPIO_hal_t;
 
 void gpio_hal_init(GPIO_hal_t *gpioInstance, GPIO_settings_t *gpioSettings);

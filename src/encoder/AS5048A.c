@@ -52,7 +52,7 @@ GPIO_settings_t AS5048A_CS_settings = {
 
 
 // declare spi and gpio instances used for AS5048A
-SPI_hal_t AS5048A_spiInst;  //spi0 ->
+SPI_hal_t AS5048A_spiInst;  
 SPI_data_t AS5048A_data;
 GPIO_hal_t AS5048A_SCK_gpioInst; //SCK pin
 GPIO_hal_t AS5048A_TX_gpioInst; //TX pin
@@ -70,7 +70,7 @@ GPIO_hal_t AS5048A_CS_gpioInst; //CS pin
 
     gpio_hal_init(&AS5048A_CS_gpioInst,&AS5048A_CS_settings);
     
-    AS5048A_CS_gpioInst.put(&AS5048A_CS_settings,1);
+    AS5048A_CS_gpioInst.put(&AS5048A_CS_gpioInst,1);
 
     gpio_set_function(16,GPIO_FUNC_SPI);
     
@@ -103,20 +103,18 @@ void AS5048AClearErrorFlag() {
     uint16_t clear_command = AS5048A_RW | CLEAR_ERROR_FLAG_ADDR; // 0x4001
     // Calculate parity bit and add to MSB
     clear_command = build_command(clear_command);
-
-    gpio_put(AS5048A_CS, 0);
-    
-    spi_write16_blocking(spi0, &clear_command, 1);
-    gpio_put(AS5048A_CS, 1);
-    
+    spi_hal_updateData(&AS5048A_spiInst,clear_command,0,1,READ);
+    AS5048A_CS_gpioInst.put(&AS5048A_CS_gpioInst, 0);
+    AS5048A_spiInst.transfer16(&AS5048A_spiInst);
+    AS5048A_CS_gpioInst.put(&AS5048A_CS_gpioInst, 1);
 
     // Send dummy read to receive error status response
     uint16_t nop = build_command(AS5048A_NOP);
     uint16_t response = 0;
-
-    gpio_put(AS5048A_CS, 0);
-    spi_read16_blocking(spi0, nop, &response, 1);
-    gpio_put(AS5048A_CS, 1);
+    spi_hal_updateData(&AS5048A_spiInst,nop,response,1,READ);
+    AS5048A_CS_gpioInst.put(&AS5048A_CS_gpioInst, 0);
+    AS5048A_spiInst.transfer16(&AS5048A_spiInst);
+    AS5048A_CS_gpioInst.put(&AS5048A_CS_gpioInst, 1);
 
 }
  void AS5048ASetConfigReg(void) 
@@ -134,16 +132,15 @@ uint16_t AS5048AReadAngle() {
     uint16_t rx = 0;
     spi_hal_updateData(&AS5048A_spiInst,tx,rx,1,READ);
 
-    gpio_hal_put(&AS5048A_CS_gpioInst, 0); // CS low
+    AS5048A_CS_gpioInst.put(&AS5048A_CS_gpioInst, 0); // CS low
     AS5048A_spiInst.transfer16(&AS5048A_spiInst); //Write
-    gpio_hal_put(&AS5048A_CS_gpioInst, 1); // CS high
+    AS5048A_CS_gpioInst.put(&AS5048A_CS_gpioInst, 1); // CS high
     uint16_t nop = build_command(AS5048A_NOP);  // Applies parity
     spi_hal_updateData(&AS5048A_spiInst,nop,0,1,READ);
     sleep_us(1);
-    gpio_hal_put(&AS5048A_CS_gpioInst, 0); // CS low
-    // spi_read16_blocking(spi0, AS5048A_NOP, &rx, 1);  // Receive response
-    AS5048A_spiInst.transfer16(&AS5048A_spiInst); //read
-    gpio_put(AS5048A_CS_gpioInst.settings.gpioPin, 1);
+    AS5048A_CS_gpioInst.put(&AS5048A_CS_gpioInst, 0); // CS low
+    AS5048A_spiInst.transfer16(&AS5048A_spiInst); //read 
+    AS5048A_CS_gpioInst.put(&AS5048A_CS_gpioInst, 1);
     
 
     rx = AS5048A_spiInst.data.res;

@@ -26,7 +26,7 @@ void gpio_hal_init(GPIO_hal_t *gpioInstance, GPIO_settings_t *gpioSettings)
 void gpio_hal_put(GPIO_hal_t *gpioInstance, bool val)
 {
     
-    gpioInstance->put(&gpioInstance->settings,val);
+    gpioInstance->put(gpioInstance,val);
 
 
 } 
