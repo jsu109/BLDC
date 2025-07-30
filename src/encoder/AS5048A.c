@@ -139,7 +139,7 @@ uint16_t AS5048AReadAngle() {
 
 
     gpio_hal_put(&AS5048A_CS_gpioInst, 0); // CS low
-    spi_hal_transfer16(&AS5048A_spiInst); //Write
+    AS5048A_spiInst.transfer16(&AS5048A_spiInst); //Write
     gpio_hal_put(&AS5048A_CS_gpioInst, 1); // CS high
     uint16_t nop = build_command(AS5048A_NOP);  // Applies parity
     AS5048A_spiInst.data.cmd = nop;
@@ -149,7 +149,7 @@ uint16_t AS5048AReadAngle() {
     sleep_us(1);
     gpio_hal_put(&AS5048A_CS_gpioInst, 0); // CS low
     // spi_read16_blocking(spi0, AS5048A_NOP, &rx, 1);  // Receive response
-    spi_hal_transfer16(&AS5048A_spiInst); //read
+    AS5048A_spiInst.transfer16(&AS5048A_spiInst); //read
     gpio_put(AS5048A_CS_gpioInst.settings.gpioPin, 1);
     // gpio_hal_put(&AS5048A_CS_gpioInst,1);
 

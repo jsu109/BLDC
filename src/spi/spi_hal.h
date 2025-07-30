@@ -37,22 +37,19 @@ typedef struct {
 
 }
 SPI_data_t;
+typedef struct SPI_hal SPI_hal_t;
 
-typedef struct {
+typedef struct SPI_hal {
     SPI_settings_t settings;
     SPI_data_t data;
     void (*init)(SPI_settings_t *);
     void (*config)(SPI_settings_t *);
-    uint16_t (*transfer16)(SPI_settings_t *, SPI_data_t*);
+    uint16_t (*transfer16)(SPI_hal_t *spiInstance);
 } SPI_hal_t;
 
 void spi_hal_init(SPI_hal_t *spiInstance, SPI_settings_t *spiSettings, SPI_data_t *spiData);
 
-void spi_hal_config(SPI_hal_t *spiInstance);
 
-uint16_t spi_hal_transfer16(SPI_hal_t *spiInstance);
-
-uint16_t spi_hal_updateDataAndTransfer(SPI_hal_t *spiInstance, uint16_t cmd, uint8_t len,bool RW);
 
 
 #endif
