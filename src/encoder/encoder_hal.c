@@ -19,6 +19,7 @@ bool encoderHalInit(encoderHal_t *hal)
             hal->config = AS5048ASetConfigReg;
             hal->read = AS5048AReadAngle;
             hal->process = AS5048AProcessAngleMeasurement;
+            hal->zero = AS5048AZero;
             
             break;
         

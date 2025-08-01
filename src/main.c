@@ -2,6 +2,7 @@
 #include "sysType.h"
 #include "pico/stdlib.h"
 #include "hardware/timer.h"
+#include "hardware/adc.h"
 #include "encoder_hal.h"
 #include "gpio_hal.h"
 
@@ -77,11 +78,22 @@ GPIO_hal_t led;
 //     .gpioFunction = GPIO_HAL_FUNC_NULL
 // };
 
+float read_pot_voltage(void) {
+    const float VREF = 3.3f;  // Reference voltage
+    const uint16_t MAX_ADC = 4095;  // 12-bit ADC on the RP2040
+
+    adc_select_input(2);  // Select ADC input 2 (GPIO28)
+    uint16_t raw = adc_read();  // Read raw ADC value (0–4095)
+
+    return (raw * VREF) / MAX_ADC;  // Convert to voltage
+}
 
 int main()
 {
     stdio_init_all();
-    
+    adc_init();
+    adc_gpio_init(28);  // Enable ADC function on GPIO28
+
     // gpio_put(led.settings.gpioPin,1);
     
     
@@ -96,9 +108,14 @@ int main()
     // led.put(&led,1);
     while (true) {
         // tight_loop_contents();
-        
+        float voltage = read_pot_voltage();
+        printf("Potentiometer voltage: %.2f V\n", voltage);
+        sleep_ms(500);
         encoder1.read(&encoder1);
         encoder2.read(&encoder2);
+        if (voltage <= 1) {
+            encoder1.zero(&encoder1);
+        }
         encoder1.process(&encoder1);
         encoder2.process(&encoder2);
 

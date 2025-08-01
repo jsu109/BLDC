@@ -140,6 +140,7 @@ target_link_libraries(motor_control
 # === Link everything to the main app ===
 target_link_libraries(BLDC_testApp
     pico_stdlib
+    hardware_adc
     motor_hal
     encoder_hal
 )
