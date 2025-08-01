@@ -40,7 +40,27 @@ encoderHal_t encoder1 = {
     .spiData = {0},
     .cs_gpioInst = {0},
 };
-encoderHal_t encoder2;
+encoderHal_t encoder2 = {
+    .id = encoder_ID_AS5048A,
+    .cs_gpioSettings = {
+        .sysType = SYSTYPE,
+        .gpioPin = 20,
+        .out = 1,
+        .gpioFunction = GPIO_HAL_FUNC_NULL, //else try NULL
+        },
+    .spiSettings = {
+        .sysType = SYSTYPE,
+        .baudrate = 500000, //500khz
+        .dataBits = 16,
+        .order = 1,
+        .cpol = 0,
+        .cpha = 1,
+        .hw_handle = 0,//spi0
+    },
+    .spiInst = {0},
+    .spiData = {0},
+    .cs_gpioInst = {0},
+};
 GPIO_hal_t led;
 // GPIO_settings_t led_settings = {
 //     .gpioPin = 20,
@@ -60,7 +80,7 @@ int main()
     // 
     bool res = encoderHalInit(&encoder1);
     
-    // bool res2 = encoderHalInit(encoder2.id, &encoder2);
+    bool res2 = encoderHalInit(&encoder2);
     // Timer example code - This example fires off the callback after 2000ms
    
     // alarm_id_t alarm_id = add_alarm_in_ms(2000, alarm_callback, &encoder1, false);
@@ -70,12 +90,12 @@ int main()
         // tight_loop_contents();
         
         uint16_t angle1 = encoder1.read(&encoder1);
-        // uint16_t angle2 = encoder2.read(&encoder2);
+        uint16_t angle2 = encoder2.read(&encoder2);
         float degrees1;
         float degrees2;
         degrees1 = encoder1.process(angle1);
-        // degrees2 = encoder2.process(angle2);
-        printf("degrees1: %.1f\n",degrees1);
+        degrees2 = encoder2.process(angle2);
+        printf("degrees1: %.1f, degrees2: %.1f\n",degrees1, degrees2);
             
         
     
