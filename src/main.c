@@ -21,44 +21,52 @@
 
 encoderHal_t encoder1 = {
     .id = encoder_ID_AS5048A,
+
+    .comm.spi = {
+        .spiInst = {0},
+        .spiData = {0},
+        .spiSettings = {
+            .sysType = SYSTYPE,
+            .baudrate = 500000,  // 500 kHz
+            .dataBits = 16,
+            .order = 1,
+            .cpol = 0,
+            .cpha = 1,
+            .hw_handle = 0       // SPI0
+        },
+    },
+
     .cs_gpioSettings = {
         .sysType = SYSTYPE,
         .gpioPin = 17,
         .out = 1,
-        .gpioFunction = GPIO_HAL_FUNC_NULL, //else try NULL
-        },
-    .spiSettings = {
-        .sysType = SYSTYPE,
-        .baudrate = 500000, //500khz
-        .dataBits = 16,
-        .order = 1,
-        .cpol = 0,
-        .cpha = 1,
-        .hw_handle = 0,//spi0
+        .gpioFunction = GPIO_HAL_FUNC_NULL,
     },
-    .spiInst = {0},
-    .spiData = {0},
     .cs_gpioInst = {0},
 };
 encoderHal_t encoder2 = {
     .id = encoder_ID_AS5048A,
+    //spi for comms
+    .comm.spi = {
+        .spiInst = {0},
+        .spiData = {0},
+        .spiSettings = {
+            .sysType = SYSTYPE,
+            .baudrate = 500000,  // 500 kHz
+            .dataBits = 16,
+            .order = 1,
+            .cpol = 0,
+            .cpha = 1,
+            .hw_handle = 0       // SPI0
+        },
+    },
+
     .cs_gpioSettings = {
         .sysType = SYSTYPE,
         .gpioPin = 20,
         .out = 1,
-        .gpioFunction = GPIO_HAL_FUNC_NULL, //else try NULL
-        },
-    .spiSettings = {
-        .sysType = SYSTYPE,
-        .baudrate = 500000, //500khz
-        .dataBits = 16,
-        .order = 1,
-        .cpol = 0,
-        .cpha = 1,
-        .hw_handle = 0,//spi0
+        .gpioFunction = GPIO_HAL_FUNC_NULL,
     },
-    .spiInst = {0},
-    .spiData = {0},
     .cs_gpioInst = {0},
 };
 GPIO_hal_t led;
@@ -89,13 +97,12 @@ int main()
     while (true) {
         // tight_loop_contents();
         
-        uint16_t angle1 = encoder1.read(&encoder1);
-        uint16_t angle2 = encoder2.read(&encoder2);
-        float degrees1;
-        float degrees2;
-        degrees1 = encoder1.process(angle1);
-        degrees2 = encoder2.process(angle2);
-        printf("degrees1: %.1f, degrees2: %.1f\n",degrees1, degrees2);
+        encoder1.read(&encoder1);
+        encoder2.read(&encoder2);
+        encoder1.process(&encoder1);
+        encoder2.process(&encoder2);
+
+        printf("degrees1: %.1f, degrees2: %.1f\n",encoder1.angleDegrees, encoder2.angleDegrees);
             
         
     

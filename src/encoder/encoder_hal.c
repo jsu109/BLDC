@@ -35,8 +35,8 @@ bool encoderHalInit(encoderHal_t *hal)
         gpio_hal_init(&hal->cs_gpioInst,&hal->cs_gpioSettings);
         
         //initalise SPI for encoder
-        spi_hal_init(&hal->spiInst,&hal->spiSettings,&hal->spiData,&hal->cs_gpioInst);
-        hal->spiInst.config(&hal->spiSettings);
+        spi_hal_init(&hal->comm.spi.spiInst,&hal->comm.spi.spiSettings,&hal->comm.spi.spiData,&hal->cs_gpioInst);
+        hal->comm.spi.spiInst.config(&hal->comm.spi.spiSettings);
         hal->init(hal);
         return 0;
 
@@ -46,18 +46,4 @@ bool encoderHalInit(encoderHal_t *hal)
     }
 }
 
-void encoderHalSetConfig(encoderHal_t *hal)
-{
-    // 
-    // hal->config(hal);
-}
-
-uint16_t encoderHalReadAngleMeasurement(encoderHal_t *hal)
-{
-    return hal->read(hal);
-}
-float encoderHalProcessMeasurement(encoderHal_t *hal, uint16_t angle)
-{
-   return hal->process(angle);
-}
 

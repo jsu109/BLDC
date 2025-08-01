@@ -38,8 +38,8 @@
 
 void AS5048AInit(encoderHal_t *encoder);
 void AS5048ASetConfigReg(encoderHal_t *encoder);
-uint16_t AS5048AReadAngle(encoderHal_t *encoder);
-float AS5048AProcessAngleMeasurement(uint16_t angle);
+void AS5048AReadAngle(encoderHal_t *encoder);
+void AS5048AProcessAngleMeasurement(encoderHal_t *encoder);
 
 
 

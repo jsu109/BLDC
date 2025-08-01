@@ -13,25 +13,39 @@ typedef enum
 
 typedef struct ENCODER_HAL encoderHal_t;
 
-typedef struct ENCODER_HAL {
-    encoderId_t id;
-
+typedef struct {
     SPI_hal_t spiInst;
     SPI_data_t spiData;
     SPI_settings_t spiSettings;
+} encoderSpi_t;
+
+typedef struct {
+    // I2C_hal_t i2cInst;
+    // I2C_data_t i2cData;
+    // I2C_settings_t i2cSettings;
+} encoderI2c_t;
+
+typedef union {
+    encoderSpi_t spi;
+    encoderI2c_t i2c;
+} encoderComm_t;
+
+typedef struct ENCODER_HAL {
+    encoderId_t id;
+    uint16_t rawAngle;
+    float angleDegrees;
+
+    encoderComm_t comm;
     
     GPIO_hal_t cs_gpioInst;
     GPIO_settings_t cs_gpioSettings;
 
     void (*init)(encoderHal_t *encoder);
     void (*config)(encoderHal_t *encoder);
-    uint16_t (*read)(encoderHal_t *encoder);
-    float (*process)(uint16_t angle);
+    void (*read)(encoderHal_t *encoder);
+    void (*process)(encoderHal_t *encoder);
 } encoderHal_t;
 
 bool encoderHalInit(encoderHal_t *hal);
-void encoderHalSetConfig(encoderHal_t *hal);
-uint16_t encoderHalReadAngleMeasurement(encoderHal_t *hal);
-float encoderHalProcessMeasurement(encoderHal_t *hal, uint16_t angle);
 
 #endif  // encoder_HAL_H

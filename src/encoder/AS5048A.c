@@ -79,17 +79,17 @@ void AS5048AClearErrorFlag(encoderHal_t *encoder) {
     uint16_t clear_command = AS5048A_RW | CLEAR_ERROR_FLAG_ADDR; // 0x4001
     // Calculate parity bit and add to MSB
     clear_command = build_command(clear_command);
-    spi_hal_updateData(&encoder->spiData,clear_command,0,1,READ);
+    spi_hal_updateData(&encoder->comm.spi.spiData,clear_command,0,1,READ);
     encoder->cs_gpioInst.put(&encoder->cs_gpioInst, 0);
-    encoder->spiInst.transfer16(&encoder->spiInst);
+    encoder->comm.spi.spiInst.transfer16(&encoder->comm.spi.spiInst);
     encoder->cs_gpioInst.put(&encoder->cs_gpioInst, 1);
 
     // Send dummy read to receive error status response
     uint16_t nop = build_command(AS5048A_NOP);
     uint16_t response = 0;
-    spi_hal_updateData(&encoder->spiData,nop,response,1,READ);
+    spi_hal_updateData(&encoder->comm.spi.spiData,nop,response,1,READ);
     encoder->cs_gpioInst.put(&encoder->cs_gpioInst, 0);
-    encoder->spiInst.transfer16(&encoder->spiInst);
+    encoder->comm.spi.spiInst.transfer16(&encoder->comm.spi.spiInst);
     encoder->cs_gpioInst.put(&encoder->cs_gpioInst, 1);
 
 }
@@ -102,34 +102,34 @@ void AS5048AClearErrorFlag(encoderHal_t *encoder) {
 
 // Your existing read angle function adapted for parity calculation and proper SPI calls
 
-uint16_t AS5048AReadAngle(encoderHal_t *encoder) {
+void AS5048AReadAngle(encoderHal_t *encoder) {
     
     
     uint16_t command = AS5048A_ANGLE_REG | AS5048A_RW;
     uint16_t tx = build_command(command);
     uint16_t rx = 0;
-    spi_hal_updateData(&encoder->spiData,tx,rx,1,READ);
+    spi_hal_updateData(&encoder->comm.spi.spiData,tx,rx,1,READ);
     encoder->cs_gpioInst.put(&encoder->cs_gpioInst, 0); // CS low
-    encoder->spiInst.transfer16(&encoder->spiInst); //Write
+    encoder->comm.spi.spiInst.transfer16(&encoder->comm.spi.spiInst); //Write
     encoder->cs_gpioInst.put(&encoder->cs_gpioInst, 1); // CS high
     uint16_t nop = build_command(AS5048A_NOP);  // Applies parity
-    spi_hal_updateData(&encoder->spiData,nop,0,1,READ);
+    spi_hal_updateData(&encoder->comm.spi.spiData,nop,0,1,READ);
     sleep_us(1);
     encoder->cs_gpioInst.put(&encoder->cs_gpioInst, 0); // CS low
-    encoder->spiInst.transfer16(&encoder->spiInst); //read 
+    encoder->comm.spi.spiInst.transfer16(&encoder->comm.spi.spiInst); //read 
     encoder->cs_gpioInst.put(&encoder->cs_gpioInst, 1);
     
 
-    rx = encoder->spiData.res;
+    rx = encoder->comm.spi.spiData.res;
     
     
     
-    return rx & AS5048A_RESULT_MASK;
+    encoder->rawAngle = rx & AS5048A_RESULT_MASK;
 }
 
-float AS5048AProcessAngleMeasurement (uint16_t angle) 
+void AS5048AProcessAngleMeasurement (encoderHal_t *encoder) 
 {
-    return (angle * 360.0f)/16384.0f;
+    encoder->angleDegrees  = (encoder->rawAngle * 360.0f)/16384.0f;
 }
 
 
