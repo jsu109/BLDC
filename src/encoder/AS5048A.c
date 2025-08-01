@@ -1,6 +1,7 @@
 #include "stdint.h"
 #include "AS5048A.h"
 #include "spi_hal.h"
+#include "encoder_hal.h"
 #include "gpio_hal.h"
 #include <stddef.h>
 #include "hardware/spi.h"
@@ -50,6 +51,13 @@ GPIO_settings_t AS5048A_CS_settings = {
     .gpioFunction = GPIO_HAL_FUNC_NULL, //else try NULL
 };
 
+GPIO_settings_t AS5048A_CS_2_settings = {
+    .sysType = RP2040,
+    .gpioPin = AS5048A_CS_2,
+    .out = 1,
+    .gpioFunction = GPIO_HAL_FUNC_NULL, //else try NULL
+};
+
 
 // declare spi and gpio instances used for AS5048A
 SPI_hal_t AS5048A_spiInst;  
@@ -58,29 +66,28 @@ GPIO_hal_t AS5048A_SCK_gpioInst; //SCK pin
 GPIO_hal_t AS5048A_TX_gpioInst; //TX pin
 GPIO_hal_t AS5048A_RX_gpioInst; //RX pin
 GPIO_hal_t AS5048A_CS_gpioInst; //CS pin
+GPIO_hal_t AS5048A_CS_2_gpioInst; //CS pin of 2nd encoder
 
-    
- void AS5048AInit(void)
+
+//need a have a function to assign a CS pin. 
+ void AS5048AInit(encoderHal_t *encoder)
 {
-    
     //initalise GPIO being used for AS5048A
     gpio_hal_init(&AS5048A_SCK_gpioInst,&AS5048A_SCK_settings);
     gpio_hal_init(&AS5048A_TX_gpioInst,&AS5048A_TX_settings);
     gpio_hal_init(&AS5048A_RX_gpioInst,&AS5048A_RX_settings);
 
-    gpio_hal_init(&AS5048A_CS_gpioInst,&AS5048A_CS_settings);
+    gpio_hal_init(&AS5048A_CS_2_gpioInst,&AS5048A_CS_2_settings);
     
-    AS5048A_CS_gpioInst.put(&AS5048A_CS_gpioInst,1);
+    //set CS Pin
+    encoder->cs_gpioInst.put(&encoder->cs_gpioInst,1);
+    
 
     gpio_set_function(16,GPIO_FUNC_SPI);
     
     gpio_set_function(18,GPIO_FUNC_SPI);
     gpio_set_function(19,GPIO_FUNC_SPI);
-    
 
-    //initalise SPI for AS5048A
-    spi_hal_init(&AS5048A_spiInst,&AS5048A_spiSettings, &AS5048A_data);
-    AS5048A_spiInst.config(&AS5048A_spiSettings);
     
     
 }
@@ -98,52 +105,58 @@ uint16_t build_command(uint16_t address) {
     return address;
 }
 // Clear error flag command - sends 1 time to the sensor
-void AS5048AClearErrorFlag() {
+void AS5048AClearErrorFlag(encoderHal_t *encoder) {
+    
     const uint16_t CLEAR_ERROR_FLAG_ADDR = 0x0001;
     uint16_t clear_command = AS5048A_RW | CLEAR_ERROR_FLAG_ADDR; // 0x4001
     // Calculate parity bit and add to MSB
     clear_command = build_command(clear_command);
-    spi_hal_updateData(&AS5048A_spiInst,clear_command,0,1,READ);
-    AS5048A_CS_gpioInst.put(&AS5048A_CS_gpioInst, 0);
-    AS5048A_spiInst.transfer16(&AS5048A_spiInst);
-    AS5048A_CS_gpioInst.put(&AS5048A_CS_gpioInst, 1);
+    spi_hal_updateData(&encoder->spiData,clear_command,0,1,READ);
+    printf("tx: %d, rx: %d, len: %d, rw: %d\n",encoder->spiData.cmd,encoder->spiData.res,encoder->spiData.len,encoder->spiData.RW);
+    encoder->cs_gpioInst.put(&encoder->cs_gpioInst, 0);
+    encoder->spiInst.transfer16(&encoder->spiInst);
+    encoder->cs_gpioInst.put(&encoder->cs_gpioInst, 1);
 
     // Send dummy read to receive error status response
     uint16_t nop = build_command(AS5048A_NOP);
     uint16_t response = 0;
-    spi_hal_updateData(&AS5048A_spiInst,nop,response,1,READ);
-    AS5048A_CS_gpioInst.put(&AS5048A_CS_gpioInst, 0);
-    AS5048A_spiInst.transfer16(&AS5048A_spiInst);
-    AS5048A_CS_gpioInst.put(&AS5048A_CS_gpioInst, 1);
+    spi_hal_updateData(&encoder->spiData,nop,response,1,READ);
+    encoder->cs_gpioInst.put(&encoder->cs_gpioInst, 0);
+    encoder->spiInst.transfer16(&encoder->spiInst);
+    encoder->cs_gpioInst.put(&encoder->cs_gpioInst, 1);
 
 }
- void AS5048ASetConfigReg(void) 
+ void AS5048ASetConfigReg(encoderHal_t *encoder) 
 {
-    AS5048AClearErrorFlag();
+    AS5048AClearErrorFlag(encoder);
  
     
 }
 
 // Your existing read angle function adapted for parity calculation and proper SPI calls
 
-uint16_t AS5048AReadAngle() {
+uint16_t AS5048AReadAngle(encoderHal_t *encoder) {
+    
+    
     uint16_t command = AS5048A_ANGLE_REG | AS5048A_RW;
     uint16_t tx = build_command(command);
     uint16_t rx = 0;
-    spi_hal_updateData(&AS5048A_spiInst,tx,rx,1,READ);
+    spi_hal_updateData(&encoder->spiData,tx,rx,1,READ);
+    // printf("tx: %d, rx: %d, len: %d, rw: %d\n",encoder->spiData.cmd,encoder->spiData.res,encoder->spiData.len,encoder->spiData.RW);
 
-    AS5048A_CS_gpioInst.put(&AS5048A_CS_gpioInst, 0); // CS low
-    AS5048A_spiInst.transfer16(&AS5048A_spiInst); //Write
-    AS5048A_CS_gpioInst.put(&AS5048A_CS_gpioInst, 1); // CS high
+    encoder->cs_gpioInst.put(&encoder->cs_gpioInst, 0); // CS low
+    encoder->spiInst.transfer16(&encoder->spiInst); //Write
+    encoder->cs_gpioInst.put(&encoder->cs_gpioInst, 1); // CS high
     uint16_t nop = build_command(AS5048A_NOP);  // Applies parity
-    spi_hal_updateData(&AS5048A_spiInst,nop,0,1,READ);
+    spi_hal_updateData(&encoder->spiData,nop,0,1,READ);
     sleep_us(1);
-    AS5048A_CS_gpioInst.put(&AS5048A_CS_gpioInst, 0); // CS low
-    AS5048A_spiInst.transfer16(&AS5048A_spiInst); //read 
-    AS5048A_CS_gpioInst.put(&AS5048A_CS_gpioInst, 1);
+    encoder->cs_gpioInst.put(&encoder->cs_gpioInst, 0); // CS low
+    encoder->spiInst.transfer16(&encoder->spiInst); //read 
+    encoder->cs_gpioInst.put(&encoder->cs_gpioInst, 1);
     
 
-    rx = AS5048A_spiInst.data.res;
+    rx = encoder->spiData.res;
+    
     
     
     return rx & AS5048A_RESULT_MASK;

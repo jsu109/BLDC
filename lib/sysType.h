@@ -6,5 +6,6 @@ typedef enum {
     STM32
 } sysType_t;
 
-
+#define SYSTYPE RP2040
+// #define SYSTYPE STM32;
 #endif

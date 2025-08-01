@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "sysType.h"
+#include "gpio_hal.h"
 typedef enum {
     SPI_HAL_MSB_FIRST,
     SPI_HAL_LSB_FIRST
@@ -41,15 +42,17 @@ typedef struct SPI_hal SPI_hal_t;
 
 typedef struct SPI_hal {
     SPI_settings_t settings;
-    SPI_data_t data;
+    SPI_data_t *data;
+    GPIO_hal_t CS;
     void (*init)(SPI_settings_t *);
     void (*config)(SPI_settings_t *);
     uint16_t (*transfer16)(SPI_hal_t *spiInstance);
+
 } SPI_hal_t;
 
-void spi_hal_init(SPI_hal_t *spiInstance, SPI_settings_t *spiSettings, SPI_data_t *spiData);
+void spi_hal_init(SPI_hal_t *spiInstance, SPI_settings_t *spiSettings, SPI_data_t *spiData, GPIO_hal_t *CS);
 
-void spi_hal_updateData(SPI_hal_t *spiInstance, uint16_t cmd, uint16_t res,uint8_t len,bool RW);
+void spi_hal_updateData(SPI_data_t *spiData, uint16_t cmd, uint16_t res,uint8_t len,bool RW);
 
 
 #endif

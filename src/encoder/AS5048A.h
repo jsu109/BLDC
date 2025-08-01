@@ -1,6 +1,6 @@
 #ifndef AS5048A_H
 #define AS5048A_H
-
+#include "encoder_hal.h"
 
 // #define 
 #define AS5048A_MAGNUTUDE_REG 0xFFE
@@ -12,6 +12,7 @@
 #define AS5048A_TX 19 //GP19 yellow
 #define AS5048A_RX 16 //GP16 green
 #define AS5048A_CS 17 //GP17 white
+#define AS5048A_CS_2 25
 #define AS5048A_CLEAR_ERROR_FLAG_REG 0x0001
 #define AS5048A_NOP 0xFFFF
 #define AS5048A_CPR 16384
@@ -35,9 +36,9 @@
 #define WRITE 1
 #define READ 0
 
-void AS5048AInit(void);
-void AS5048ASetConfigReg(void);
-uint16_t AS5048AReadAngle(void);
+void AS5048AInit(encoderHal_t *encoder);
+void AS5048ASetConfigReg(encoderHal_t *encoder);
+uint16_t AS5048AReadAngle(encoderHal_t *encoder);
 float AS5048AProcessAngleMeasurement(uint16_t angle);
 
 

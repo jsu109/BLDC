@@ -29,14 +29,14 @@ void rp2040_spi_setFormat(SPI_settings_t *settings) {
 
 uint16_t rp2040_spi_transfer16(SPI_hal_t *spiInstance) {
     spi_inst_t *rp2040Instance = get_spi_instance(spiInstance->settings.hw_handle);
-    switch (spiInstance->data.RW) {
+    switch (spiInstance->data->RW) {
         case 0: {
-            spi_write16_read16_blocking(rp2040Instance, &spiInstance->data.cmd, &spiInstance->data.res, spiInstance->data.len);
+            spi_write16_read16_blocking(rp2040Instance, &spiInstance->data->cmd, &spiInstance->data->res, spiInstance->data->len);
             
             return 0;
         }
         case 1:
-            spi_write16_blocking(rp2040Instance, &spiInstance->data.cmd, spiInstance->data.len);
+            spi_write16_blocking(rp2040Instance, &spiInstance->data->cmd, spiInstance->data->len);
             return 0;
     }
     return 0;
