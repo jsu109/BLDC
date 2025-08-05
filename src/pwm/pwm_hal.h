@@ -3,6 +3,8 @@
 
 #include "sysType.h"
 #include "gpio_hal.h"
+typedef unsigned int uint;
+
 typedef struct {
     sysType_t sysType;
     GPIO_hal_t gpioInst;

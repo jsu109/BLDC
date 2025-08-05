@@ -117,6 +117,19 @@ target_include_directories(motor_hal PUBLIC
     ${CMAKE_CURRENT_LIST_DIR}/src/motor_control
 )
 
+# === Add pwm_hal module ===
+add_library(pwm_hal STATIC
+    src/pwm/pwm_hal.c
+    
+)
+target_include_directories(pwm_hal PUBLIC
+    ${CMAKE_CURRENT_LIST_DIR}/src/pwm
+    ${CMAKE_CURRENT_LIST_DIR}/lib
+)
+target_link_libraries(pwm_hal
+    gpio_hal
+)
+
 # === Add encoder_hal module ===
 add_library(encoder_hal STATIC
     src/encoder/encoder_hal.c
@@ -157,6 +170,7 @@ target_link_libraries(BLDC_testApp
     hardware_adc
     motor_hal
     encoder_hal
+    pwm_hal
 )
 
 # === Output settings ===

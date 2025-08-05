@@ -5,7 +5,7 @@
 #include "hardware/adc.h"
 #include "encoder_hal.h"
 #include "gpio_hal.h"
-
+#include "pwm_hal.h"
 // int64_t alarm_callback(alarm_id_t id, void *user_data) {
 //     encoderHal_t encoder = *((encoderHal_t *)user_data);
 //     uint16_t raw = encoder.read();
@@ -19,7 +19,20 @@
 // }
 
 
-
+PWM_hal_t pwm1 = {
+    .pwmSettings = {
+        .sysType = SYSTYPE,
+        
+        .gpioInst = {
+            .settings = {
+                .sysType = SYSTYPE,
+                .gpioPin = 1,
+                .gpioFunction = GPIO_HAL_FUNC_PWM,
+                .out = 0,
+            },
+        },
+    }
+};
 encoderHal_t encoder1 = {
     .id = encoder_ID_AS5048A,
 

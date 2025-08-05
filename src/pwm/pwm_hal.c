@@ -15,6 +15,6 @@ void pwm_hal_init(PWM_hal_t *pwmHalInst, PWM_settings_t *pwmSettings)
     }
 
     if (pwmHalInst->init) {
-        pwmHalInst>init(pwmHalInst);
+        pwmHalInst->init(pwmHalInst);
     }
 }
