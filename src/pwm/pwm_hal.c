@@ -2,7 +2,7 @@
 #include "pwm_hal.h"
 #include "rp2040_pwm.h"
 
-void pwm_hal_init(PWM_hal_t *pwmHalInst, PWM_settings_t *pwmSettings)
+void pwm_hal_init(PWM_hal_t *pwmHalInst)
 {   
     
     switch(pwmHalInst->pwmSettings.sysType) {
@@ -18,3 +18,4 @@ void pwm_hal_init(PWM_hal_t *pwmHalInst, PWM_settings_t *pwmSettings)
         pwmHalInst->init(pwmHalInst);
     }
 }
+

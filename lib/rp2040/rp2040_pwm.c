@@ -1,5 +1,7 @@
+#include "sysType.h"
 #include "rp2040_pwm.h"
 #include "hardware/pwm.h"
+
 void rp2040_pwm_init( PWM_hal_t *pwmHalInst) 
 {
     PWM_settings_t *settings = &pwmHalInst->pwmSettings;
@@ -28,3 +30,25 @@ void rp2040_pwm_init( PWM_hal_t *pwmHalInst)
     pwm_set_enabled(slice, true);
 }
 
+
+
+void rp2040_pwm_setFreqKHz(PWM_hal_t *pwmHalInst, uint16_t freq_khz)
+{
+    uint slice = pwmHalInst->hw.sliceNum;
+    uint16_t wrap = pwmHalInst->pwmSettings.wrap;
+    float clkdiv;
+
+    // Avoid divide by zero
+    if (freq_khz == 0 || wrap == 0) {
+        return;
+    }
+
+    // Calculate clkdiv
+    clkdiv = PWM_CLOCK_HZ / (1000.0f * freq_khz * (wrap + 1));
+
+    // Apply it
+    pwm_set_clkdiv(slice, clkdiv);
+
+    // Update internal record
+    pwmHalInst->pwmSettings.clkDiv = clkdiv;
+}

@@ -20,7 +20,7 @@ typedef struct PWM_hal {
     void (*start)(PWM_hal_t *);
     void (*setDuty)(PWM_hal_t *, uint16_t duty);
     void (*stop)(PWM_hal_t *);
-    
+    void (*setFreqKHz)(PWM_hal_t, uint16_t frequency);
     PWM_settings_t pwmSettings;
 
     // Optional hardware-specific runtime cache
@@ -30,6 +30,5 @@ typedef struct PWM_hal {
     } hw;
 } PWM_hal_t;
 
-void pwm_hal_init(PWM_hal_t *pwmHalInst, PWM_settings_t *pwmSettings);
-
+void pwm_hal_init(PWM_hal_t *pwmHalInst);
 #endif //PWM_HAL_H

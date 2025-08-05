@@ -22,7 +22,7 @@
 PWM_hal_t pwm1 = {
     .pwmSettings = {
         .sysType = SYSTYPE,
-        
+        .duty = 0,
         .gpioInst = {
             .settings = {
                 .sysType = SYSTYPE,
