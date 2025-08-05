@@ -22,13 +22,15 @@
 PWM_hal_t pwm1 = {
     .pwmSettings = {
         .sysType = SYSTYPE,
-        .duty = 0,
+        .duty = 50,
+        .clkDiv = 6250,
+        .wrap = 9999,
         .gpioInst = {
             .settings = {
                 .sysType = SYSTYPE,
-                .gpioPin = 1,
+                .gpioPin = 25,
                 .gpioFunction = GPIO_HAL_FUNC_PWM,
-                .out = 0,
+                .out = 1,
             },
         },
     }
@@ -54,7 +56,7 @@ encoderHal_t encoder1 = {
         .sysType = SYSTYPE,
         .gpioPin = 17,
         .out = 1,
-        .gpioFunction = GPIO_HAL_FUNC_NULL,
+        .gpioFunction = GPIO_HAL_FUNC_SIO,
     },
     .cs_gpioInst = {0},
 };
@@ -79,13 +81,13 @@ encoderHal_t encoder2 = {
         .sysType = SYSTYPE,
         .gpioPin = 20,
         .out = 1,
-        .gpioFunction = GPIO_HAL_FUNC_NULL,
+        .gpioFunction = GPIO_HAL_FUNC_SIO,
     },
     .cs_gpioInst = {0},
 };
-GPIO_hal_t led;
+// GPIO_hal_t led;
 // GPIO_settings_t led_settings = {
-//     .gpioPin = 20,
+//     .gpioPin = 25,
 //     .out = 1,
 //     .sysType = RP2040,
 //     .gpioFunction = GPIO_HAL_FUNC_NULL
@@ -101,24 +103,37 @@ float read_pot_voltage(void) {
     return (raw * VREF) / MAX_ADC;  // Convert to voltage
 }
 
+// Maps potentiometer voltage (0.0V–3.3V) to frequency (0.1Hz–10Hz) linearly
+uint16_t map_voltage_to_duty(float voltage) {
+    const uint16_t min_freq = 1;
+    const uint16_t max_freq = 100;
+    const float min_voltage = 0.0f;
+    const float max_voltage = 360;
+
+    if (voltage < min_voltage) voltage = min_voltage;
+    if (voltage > max_voltage) voltage = max_voltage;
+    
+    return min_freq + (voltage - min_voltage) * (max_freq - min_freq) / (max_voltage - min_voltage);
+}
+
 int main()
 {
     stdio_init_all();
     adc_init();
     adc_gpio_init(28);  // Enable ADC function on GPIO28
-
-    // gpio_put(led.settings.gpioPin,1);
     
     
     // 
     bool res = encoderHalInit(&encoder1);
     
     bool res2 = encoderHalInit(&encoder2);
+    pwm_hal_init(&pwm1);
+    pwm1.setDuty(&pwm1,50000);
     // Timer example code - This example fires off the callback after 2000ms
    
     // alarm_id_t alarm_id = add_alarm_in_ms(2000, alarm_callback, &encoder1, false);
   
-    // led.put(&led,1);
+    
     while (true) {
         // tight_loop_contents();
         float voltage = read_pot_voltage();
@@ -126,11 +141,11 @@ int main()
         sleep_ms(500);
         encoder1.read(&encoder1);
         encoder2.read(&encoder2);
-        if (voltage <= 1) {
-            encoder1.zero(&encoder1);
-        }
         encoder1.process(&encoder1);
         encoder2.process(&encoder2);
+        float duty = map_voltage_to_duty(encoder1.angleDegrees);
+        pwm1.setDuty(&pwm1, duty);
+        
 
         printf("degrees1: %.1f, degrees2: %.1f\n",encoder1.angleDegrees, encoder2.angleDegrees);
             

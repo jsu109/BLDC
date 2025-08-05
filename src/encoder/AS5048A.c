@@ -52,9 +52,6 @@ GPIO_hal_t AS5048A_RX_gpioInst; //RX pin
     //set CS Pin
     encoder->cs_gpioInst.put(&encoder->cs_gpioInst,1);
     
-    gpio_set_function(16,GPIO_FUNC_SPI);
-    gpio_set_function(18,GPIO_FUNC_SPI);
-    gpio_set_function(19,GPIO_FUNC_SPI);
 
     
     

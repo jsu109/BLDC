@@ -62,6 +62,7 @@ add_executable(BLDC_testApp
 add_library(rp2040 STATIC
     lib/rp2040/rp2040_spi.c
     lib/rp2040/rp2040_gpio.c
+    lib/rp2040/rp2040_pwm.c
     # Add other RP2040-specific source files here as needed
 )
 
@@ -69,14 +70,17 @@ target_include_directories(rp2040 PUBLIC
     ${CMAKE_CURRENT_LIST_DIR}/lib/rp2040
     ${CMAKE_CURRENT_LIST_DIR}/lib/rp2040/spi
     ${CMAKE_CURRENT_LIST_DIR}/lib/rp2040/gpio
+    ${CMAKE_CURRENT_LIST_DIR}/lib/rp2040/pwm
     ${CMAKE_CURRENT_LIST_DIR}/src/spi
     ${CMAKE_CURRENT_LIST_DIR}/src/gpio
+    ${CMAKE_CURRENT_LIST_DIR}/src/pwm
     ${CMAKE_CURRENT_LIST_DIR}/lib
 )
 
 target_link_libraries(rp2040
     hardware_spi
     hardware_gpio
+    hardware_pwm
 )
 
 # === Add gpio_hal module ===
@@ -127,7 +131,9 @@ target_include_directories(pwm_hal PUBLIC
     ${CMAKE_CURRENT_LIST_DIR}/lib
 )
 target_link_libraries(pwm_hal
+    rp2040
     gpio_hal
+    pico_stdlib
 )
 
 # === Add encoder_hal module ===
