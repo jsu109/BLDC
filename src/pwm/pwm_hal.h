@@ -2,13 +2,14 @@
 #define PWM_HAL_H
 
 #include "sysType.h"
-
+#include "gpio_hal.h"
 typedef struct {
     sysType_t sysType;
-    const uint gpioPin;
+    GPIO_hal_t gpioInst;
     float clkDiv;
     uint16_t wrap;
     uint16_t duty;
+    uint8_t hw_handle;
 } PWM_settings_t;
 
 typedef struct PWM_hal PWM_hal_t;
