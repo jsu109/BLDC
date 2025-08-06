@@ -23,8 +23,8 @@ PWM_hal_t pwm1 = {
     .pwmSettings = {
         .sysType = SYSTYPE,
         .duty = 50,
-        .clkDiv = 6250,
-        .wrap = 9999,
+        .clkDiv = 10,
+        .wrap = 249,
         .gpioInst = {
             .settings = {
                 .sysType = SYSTYPE,
@@ -103,17 +103,16 @@ float read_pot_voltage(void) {
     return (raw * VREF) / MAX_ADC;  // Convert to voltage
 }
 
-// Maps potentiometer voltage (0.0V–3.3V) to frequency (0.1Hz–10Hz) linearly
-uint16_t map_voltage_to_duty(float voltage) {
-    const uint16_t min_freq = 1;
-    const uint16_t max_freq = 100;
-    const float min_voltage = 0.0f;
-    const float max_voltage = 360;
+uint16_t map_angle_to_duty(float angle) {
+    const uint16_t min_duty = 1;
+    const uint16_t max_duty = 100;
+    const float min_angle = 0.0f;
+    const float max_angle = 360;
 
-    if (voltage < min_voltage) voltage = min_voltage;
-    if (voltage > max_voltage) voltage = max_voltage;
+    if (angle < min_angle) angle = min_angle;
+    if (angle > max_angle) angle = max_angle;
     
-    return min_freq + (voltage - min_voltage) * (max_freq - min_freq) / (max_voltage - min_voltage);
+    return min_duty + (angle - min_angle) * (max_duty - min_duty) / (max_angle - min_angle);
 }
 
 int main()
@@ -128,7 +127,8 @@ int main()
     
     bool res2 = encoderHalInit(&encoder2);
     pwm_hal_init(&pwm1);
-    pwm1.setDuty(&pwm1,50000);
+    pwm1.setDuty(&pwm1,50);
+    pwm1.setFreqHz(&pwm1, 50000);
     // Timer example code - This example fires off the callback after 2000ms
    
     // alarm_id_t alarm_id = add_alarm_in_ms(2000, alarm_callback, &encoder1, false);
@@ -143,9 +143,10 @@ int main()
         encoder2.read(&encoder2);
         encoder1.process(&encoder1);
         encoder2.process(&encoder2);
-        float duty = map_voltage_to_duty(encoder1.angleDegrees);
+        float duty = map_angle_to_duty(encoder1.angleDegrees);
         pwm1.setDuty(&pwm1, duty);
-        
+        float freq = map_angle_to_duty(encoder2.angleDegrees);
+        pwm1.setFreqHz(&pwm1, freq);
 
         printf("degrees1: %.1f, degrees2: %.1f\n",encoder1.angleDegrees, encoder2.angleDegrees);
             

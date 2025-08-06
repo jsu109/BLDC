@@ -1,36 +1,27 @@
-BLDC_testApp/
-├── CMakeLists.txt                  # Top-level CMake file
-├── pico_sdk_import.cmake          # SDK import file (as per Pico setup)
+.
+├── main.c                        # Main application entry point
 │
-├── src/                            # Application source files (.c)
-│   ├── main.c                      # Entry point
-│   ├──/motor_control
-|   |   ├── motor_control.h / .c    # Hardware-independent, high-level logic (e.g., speed control, commutation logic)
-|   |   ├── motor_hal.h / .c        # Hardware Abstraction Layer (HAL): wraps low-level functions (PWM, GPIO, SPI)
-|   |   └── motor_types.h           # Common enums, structs, typedefs shared across the module
-│   |
-|   ├── encoder.c                  # AS5080A SPI read logic
-│   ├── pwm_driver.c               # PWM setup and control
-│   ├── utils.c                    # Optional: general utilities (e.g. angle math)
+├── lib/
+│   ├── sysType.h                # Common platform definitions
+│   └── rp2040/                  # RP2040-specific hardware drivers
+│       ├── rp2040_gpio.[c|h]
+│       ├── rp2040_pwm.[c|h]
+│       └── rp2040_spi.[c|h]
 │
-├── lib/                            # Header files (.h)
-│   ├── utils.h
-│
-├── build/                          # CMake build output (ignored by git)
-│   └── ...
-│
-├── README.md                       # Project documentation
-├── .gitignore                      # If using git
-
-
-Issues: 
-#01 Add hardware PWM implementation in motor_hal using hardware_pwm
-    - void motor_hal_pwm_init(uint8_t phase);
-    # Initialize PWM for a given motor phase.
-    - void motor_hal_set_pwm(uint8_t phase, float duty_cycle);
-    #Set duty cycle for a motor phase in the range [0.0, 1.0].
-    - void motor_hal_pwm_enable(uint8_t phase);
-    #Enable PWM output for a phase.
-    - void motor_hal_pwm_disable(uint8_t phase);
-    #Disable PWM output for a phase.
-
+└── src/                         # Platform-agnostic HALs and motor logic
+    ├── encoder/
+    │   ├── AS5048A.[c|h]        # AS5048A encoder driver
+    │   └── encoder_hal.[c|h]    # Encoder abstraction layer
+    │
+    ├── gpio/
+    │   ├── gpio_hal.[c|h]       # GPIO abstraction
+    │
+    ├── pwm/
+    │   ├── pwm_hal.[c|h]        # PWM abstraction
+    │
+    ├── spi/
+    │   ├── spi_hal.[c|h]        # SPI abstraction
+    │
+    └── motor_control/
+        ├── motor_control.[c|h]  # Motor control algorithms
+        └── motor_hal.[c|h]      # Hardware abstraction for motor control
