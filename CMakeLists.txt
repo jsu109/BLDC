@@ -40,17 +40,20 @@ target_include_directories(platform_headers INTERFACE
 add_library(rp2040 STATIC
     lib/platform/rp2040/rp2040_spi.c
     lib/platform/rp2040/rp2040_gpio.c
+    lib/platform/rp2040/rp2040_pwm.c
 )
 
 target_include_directories(rp2040 PUBLIC
     ${CMAKE_CURRENT_LIST_DIR}/lib/platform/rp2040
     ${CMAKE_CURRENT_LIST_DIR}/src/gpio
     ${CMAKE_CURRENT_LIST_DIR}/src/spi
+    ${CMAKE_CURRENT_LIST_DIR}/src/pwm
 )
 
 target_link_libraries(rp2040
     hardware_spi
     hardware_gpio
+    hardware_pwm
     platform_headers
 )
 
@@ -95,6 +98,21 @@ target_include_directories(spi_hal PUBLIC
 )
 
 target_link_libraries(spi_hal
+    rp2040
+    pico_stdlib
+    platform_headers
+)
+
+# === Add pwm_hal ===
+add_library(pwm_hal STATIC
+    src/pwm/pwm_hal.c
+)
+
+target_include_directories(pwm_hal PUBLIC
+    ${CMAKE_CURRENT_LIST_DIR}/src/pwm
+)
+
+target_link_libraries(pwm_hal
     rp2040
     pico_stdlib
     platform_headers
