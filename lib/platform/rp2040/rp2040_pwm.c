@@ -24,8 +24,8 @@ void rp2040_pwm_init( PWM_hal_t *pwmHalInst)
     pwm_set_chan_level(slice, channel, settings->duty);
 
     
-    // Enable the PWM slice
-    pwm_set_enabled(slice, true);
+    // // Enable the PWM slice
+    // pwm_set_enabled(slice, true); dont start
 
     printf("PWM INIT: slice %d, chan %d, clkDiv %.2f, wrap %u\n",
     slice, channel, settings->clkDiv, settings->wrap);
@@ -82,4 +82,17 @@ void rp2040_pwm_setDuty(PWM_hal_t *pwmHalInst, uint16_t duty_percent)
 
     // Update internal record
     pwmHalInst->pwmSettings.duty = duty_percent;
+}
+
+
+void rp2040_pwm_start(PWM_hal_t *pwmHalInst)
+{
+    uint slice = pwmHalInst->hw.sliceNum;
+    pwm_set_enabled(slice, true);
+}
+
+void rp2040_pwm_stop(PWM_hal_t *pwmHalInst)
+{
+    uint slice = pwmHalInst->hw.sliceNum;
+    pwm_set_enabled(slice, false);
 }
