@@ -36,26 +36,35 @@ target_include_directories(platform_headers INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/lib/platform
 )
 
-# === Add rp2040 library (platform-specific drivers) ===
-add_library(rp2040 STATIC
-    lib/platform/rp2040/rp2040_spi.c
-    lib/platform/rp2040/rp2040_gpio.c
-    lib/platform/rp2040/rp2040_pwm.c
-)
+# === Platform abstraction layer ===
+add_library(platform INTERFACE)
 
-target_include_directories(rp2040 PUBLIC
-    ${CMAKE_CURRENT_LIST_DIR}/lib/platform/rp2040
-    ${CMAKE_CURRENT_LIST_DIR}/src/gpio
-    ${CMAKE_CURRENT_LIST_DIR}/src/spi
-    ${CMAKE_CURRENT_LIST_DIR}/src/pwm
-)
+if(PICO_BOARD STREQUAL "pico")
+    add_library(rp2040 STATIC
+        lib/platform/rp2040/rp2040_spi.c
+        lib/platform/rp2040/rp2040_gpio.c
+        lib/platform/rp2040/rp2040_pwm.c
+    )
 
-target_link_libraries(rp2040
-    hardware_spi
-    hardware_gpio
-    hardware_pwm
-    platform_headers
-)
+    target_include_directories(rp2040 PUBLIC
+        ${CMAKE_CURRENT_LIST_DIR}/lib/platform/rp2040
+        ${CMAKE_CURRENT_LIST_DIR}/src/gpio
+        ${CMAKE_CURRENT_LIST_DIR}/src/spi
+        ${CMAKE_CURRENT_LIST_DIR}/src/pwm
+    )
+
+    target_link_libraries(rp2040
+        hardware_spi
+        hardware_gpio
+        hardware_pwm
+        platform_headers
+    )
+
+    # platform "implements" rp2040
+    target_link_libraries(platform INTERFACE rp2040)
+else()
+    message(FATAL_ERROR "Unsupported platform: ${PICO_BOARD}")
+endif()
 
 # === Add AS5048A driver ===
 add_library(drivers_AS5048A STATIC
@@ -68,7 +77,7 @@ target_include_directories(drivers_AS5048A PUBLIC
 )
 
 target_link_libraries(drivers_AS5048A
-    rp2040
+    platform
     pico_stdlib
     platform_headers
 )
@@ -83,7 +92,7 @@ target_include_directories(gpio_hal PUBLIC
 )
 
 target_link_libraries(gpio_hal
-    rp2040
+    platform
     pico_stdlib
     platform_headers
 )
@@ -98,7 +107,7 @@ target_include_directories(spi_hal PUBLIC
 )
 
 target_link_libraries(spi_hal
-    rp2040
+    platform
     pico_stdlib
     platform_headers
 )
@@ -113,7 +122,7 @@ target_include_directories(pwm_hal PUBLIC
 )
 
 target_link_libraries(pwm_hal
-    rp2040
+    platform
     pico_stdlib
     platform_headers
 )
