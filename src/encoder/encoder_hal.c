@@ -39,11 +39,11 @@ bool encoderHalInit(encoderHal_t *hal)
         spi_hal_init(&hal->comm.spi.spiInst,&hal->comm.spi.spiSettings,&hal->comm.spi.spiData,&hal->cs_gpioInst);
         hal->comm.spi.spiInst.config(&hal->comm.spi.spiSettings);
         hal->init(hal);
-        return 0;
+        return 1;
 
     } 
     else {
-        return 1;
+        return 0;
     }
 }
 
