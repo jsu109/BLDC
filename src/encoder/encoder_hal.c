@@ -5,6 +5,7 @@
 #include "pico/stdlib.h"
 #include "stddef.h"
 #include <stdio.h>
+#include <stdio.h>
 
 
 bool encoderHalInit(encoderHal_t *hal) 
@@ -34,6 +35,7 @@ bool encoderHalInit(encoderHal_t *hal)
         // hal->init(hal);
         //initalise CS pin
        
+       
         gpio_hal_init(&hal->cs_gpioInst,&hal->cs_gpioSettings);
         
         //initalise SPI for encoder
@@ -41,6 +43,7 @@ bool encoderHalInit(encoderHal_t *hal)
         timer_hal_init(&hal->timer);
         hal->comm.spi.spiInst.config(&hal->comm.spi.spiSettings);
         hal->init(hal);
+        return 1;
         return 1;
 
     } 

@@ -238,6 +238,13 @@ int main()
     motor.encoder = &encoder2;
     motor.pole_pairs = 7;
     motor.max_duty = 50;
+
+    motor.pwmU = &pwmU;
+    motor.pwmV = &pwmV;
+    motor.pwmW = &pwmW;
+    motor.encoder = &encoder2;
+    motor.pole_pairs = 7;
+    motor.max_duty = 50;
     nSleep.put(&nSleep,1); // enable DRV8317
     if (!motor_init(&motor)) {
         // while(1) {printf("Motor init failed\n");}
