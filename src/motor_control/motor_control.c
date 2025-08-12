@@ -4,7 +4,7 @@
 
 bool motor_init(MotorController_t *motor) {
     if (!motor || !motor->pwmU || !motor->pwmV || !motor->pwmW || !motor->encoder) return false;
-        
+    
     pwm_hal_init(motor->pwmU);
     pwm_hal_init(motor->pwmV);
     pwm_hal_init(motor->pwmW);
@@ -16,20 +16,17 @@ bool motor_init(MotorController_t *motor) {
     motor->pwmU->start(motor->pwmU);
     motor->pwmV->start(motor->pwmV);
     motor->pwmW->start(motor->pwmW);
-
+    
     // Initialize encoder
     if (!encoderHalInit(motor->encoder)) {
-        while(1) {printf("failed??");}
-        return false;
-    }
-    
-        
+        return false; 
+    } 
     // Set some defaults
     motor->max_duty = 50;
     motor->pole_pairs = 7;
     motor->target_elec_angle = 0;
-
     return true;
+     
 }
 
 void motor_set_max_duty(MotorController_t *motor, uint16_t duty) {
@@ -48,7 +45,10 @@ void motor_update(MotorController_t *motor) {
 
     // Read current mechanical angle
     motor->encoder->read(motor->encoder);
+    encoderHal_updateTimestamp(motor->encoder);
     motor->encoder->process(motor->encoder);
+    encoderHal_updateVelocity(motor->encoder);
+    
     float mech_angle = motor->encoder->angleDegrees;
 
     // Calculate electrical angle (you can use target_elec_angle instead for open-loop)

@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "spi_hal.h"
+#include "timer_hal.h"
+
 typedef enum
 {
     encoder_ID_UNKNOWN,
@@ -34,11 +36,17 @@ typedef struct ENCODER_HAL {
     encoderId_t id;
     uint16_t rawAngle;
     float angleDegrees;
+    uint32_t lastTimestampMs;   // Time of last reading
+    uint32_t deltaTimeMs;       // Time between last two readings
+
+    float velocityDegPerSec;
+    float velocityRPM;
+    float lastAngleDegrees;
 
     encoderComm_t comm;
-    
     GPIO_hal_t cs_gpioInst;
     GPIO_settings_t cs_gpioSettings;
+    timer_hal_t *timer;
 
     void (*init)(encoderHal_t *encoder);
     void (*config)(encoderHal_t *encoder);
@@ -47,6 +55,8 @@ typedef struct ENCODER_HAL {
     void (*process)(encoderHal_t *encoder);
 } encoderHal_t;
 
-bool encoderHalInit(encoderHal_t *hal);
+bool encoderHalInit(encoderHal_t *encoder);
+void encoderHal_updateTimestamp(encoderHal_t *encoder);
+void encoderHal_updateVelocity(encoderHal_t *encoder);
 
 #endif  // encoder_HAL_H

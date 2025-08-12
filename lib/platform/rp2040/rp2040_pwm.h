@@ -9,4 +9,8 @@ void rp2040_pwm_setFreqHz(PWM_hal_t *pwmHalInst, float frequency);
 
 void rp2040_pwm_setDuty(PWM_hal_t *pwmHalInst, uint16_t duty);
 
+void rp2040_pwm_start(PWM_hal_t *pwmHalInst);
+
+void rp2040_pwm_stop(PWM_hal_t *pwmHalInst);
+
 #endif //RP2040_PWM_H

@@ -12,7 +12,8 @@ void pwm_hal_init(PWM_hal_t *pwmHalInst)
             pwmHalInst->init = rp2040_pwm_init;
             pwmHalInst->setDuty = rp2040_pwm_setDuty;
             pwmHalInst->setFreqHz = rp2040_pwm_setFreqHz;
-
+            pwmHalInst->start = rp2040_pwm_start;
+            pwmHalInst->stop = rp2040_pwm_stop;
             
             break;
         default:

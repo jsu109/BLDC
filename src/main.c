@@ -70,7 +70,6 @@ PWM_hal_t pwmW = {
 };
 encoderHal_t encoder1 = {
     .id = encoder_ID_AS5048A,
-
     .comm.spi = {
         .spiInst = {0},
         .spiData = {0},
@@ -136,13 +135,13 @@ GPIO_hal_t nFault = {
     },
 };
 
-// GPIO_hal_t led;
-// GPIO_settings_t led_settings = {
-//     .gpioPin = 25,
-//     .out = 1,
-//     .sysType = RP2040,
-//     .gpioFunction = GPIO_HAL_FUNC_NULL
-// };
+GPIO_hal_t led;
+GPIO_settings_t led_settings = {
+    .gpioPin = 25,
+    .out = 1,
+    .sysType = RP2040,
+    .gpioFunction = GPIO_HAL_FUNC_NULL
+};
 
 float read_pot_voltage(void) {
     const float VREF = 3.3f;  // Reference voltage
@@ -221,7 +220,7 @@ int main()
     motor.pwmU = &pwmU;
     motor.pwmV = &pwmV;
     motor.pwmW = &pwmW;
-    motor.encoder = &encoder1;
+    motor.encoder = &encoder2;
     motor.pole_pairs = 7;
     motor.max_duty = 50;
     nSleep.put(&nSleep,1); // enable DRV8317
@@ -230,6 +229,7 @@ int main()
         nSleep.put(&nSleep,0); // enable DRV8317
         return -1;
     } 
+    
     
 
     

@@ -44,6 +44,7 @@ if(PICO_BOARD STREQUAL "pico")
         lib/platform/rp2040/rp2040_spi.c
         lib/platform/rp2040/rp2040_gpio.c
         lib/platform/rp2040/rp2040_pwm.c
+        lib/platform/rp2040/rp2040_timer.c
     )
 
     target_include_directories(rp2040 PUBLIC
@@ -51,12 +52,15 @@ if(PICO_BOARD STREQUAL "pico")
         ${CMAKE_CURRENT_LIST_DIR}/src/gpio
         ${CMAKE_CURRENT_LIST_DIR}/src/spi
         ${CMAKE_CURRENT_LIST_DIR}/src/pwm
+        ${CMAKE_CURRENT_LIST_DIR}/src/timer
+
     )
 
     target_link_libraries(rp2040
         hardware_spi
         hardware_gpio
         hardware_pwm
+        hardware_timer
         platform_headers
     )
 
@@ -127,6 +131,21 @@ target_link_libraries(pwm_hal
     platform_headers
 )
 
+# === Add timer_hal ===
+add_library(timer_hal STATIC
+    src/timer/timer_hal.c
+)
+
+target_include_directories(timer_hal PUBLIC
+    ${CMAKE_CURRENT_LIST_DIR}/src/timer
+)
+
+target_link_libraries(timer_hal
+    platform
+    pico_stdlib
+    platform_headers
+)
+
 # === Add encoder_hal ===
 add_library(encoder_hal STATIC
     src/encoder/encoder_hal.c
@@ -135,11 +154,13 @@ add_library(encoder_hal STATIC
 target_include_directories(encoder_hal PUBLIC
     ${CMAKE_CURRENT_LIST_DIR}/src/encoder
     ${CMAKE_CURRENT_LIST_DIR}/src/spi
+    ${CMAKE_CURRENT_LIST_DIR}/src/timer
 )
 
 target_link_libraries(encoder_hal
     gpio_hal
     spi_hal
+    timer_hal
     drivers_AS5048A
     pico_stdlib
 )
@@ -180,6 +201,7 @@ target_link_libraries(BLDC_testApp
     motor_hal
     encoder_hal
     pwm_hal
+    timer_hal
 )
 
 # === Output settings ===
