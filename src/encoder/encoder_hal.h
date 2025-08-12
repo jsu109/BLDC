@@ -44,12 +44,6 @@ typedef struct ENCODER_HAL {
     float velocityDegPerSec;
     float velocityRPM;
     float lastAngleDegrees;
-    uint32_t lastTimestampMs;   // Time of last reading
-    uint32_t deltaTimeMs;       // Time between last two readings
-
-    float velocityDegPerSec;
-    float velocityRPM;
-    float lastAngleDegrees;
 
     encoderComm_t comm;
     GPIO_hal_t cs_gpioInst;
