@@ -156,6 +156,7 @@ float read_pot_voltage(void) {
     return (raw * VREF) / MAX_ADC;  // Convert to voltage
 }
 
+
 uint16_t map_angle_to_duty(float angle) {
     const uint16_t min_duty = 1;
     const uint16_t max_duty = 100;
