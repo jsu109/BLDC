@@ -6,7 +6,8 @@
 #include "encoder_hal.h"
 #include "gpio_hal.h"
 #include "pwm_hal.h"
-#include <math.h>
+#include "timer_hal.h"
+#include "motor_control.h"
 // int64_t alarm_callback(alarm_id_t id, void *user_data) {
 //     encoderHal_t encoder = *((encoderHal_t *)user_data);
 //     uint16_t raw = encoder.read();
@@ -70,7 +71,6 @@ PWM_hal_t pwmW = {
 };
 encoderHal_t encoder1 = {
     .id = encoder_ID_AS5048A,
-
     .comm.spi = {
         .spiInst = {0},
         .spiData = {0},
@@ -109,7 +109,9 @@ encoderHal_t encoder2 = {
             .hw_handle = 0       // SPI0
         },
     },
-
+    .timer = {
+        .sysType = SYSTYPE,
+    },
     .cs_gpioSettings = {
         .sysType = SYSTYPE,
         .gpioPin = 20,
@@ -136,13 +138,13 @@ GPIO_hal_t nFault = {
     },
 };
 
-// GPIO_hal_t led;
-// GPIO_settings_t led_settings = {
-//     .gpioPin = 25,
-//     .out = 1,
-//     .sysType = RP2040,
-//     .gpioFunction = GPIO_HAL_FUNC_NULL
-// };
+GPIO_hal_t led;
+GPIO_settings_t led_settings = {
+    .gpioPin = 25,
+    .out = 1,
+    .sysType = RP2040,
+    .gpioFunction = GPIO_HAL_FUNC_NULL
+};
 
 float read_pot_voltage(void) {
     const float VREF = 3.3f;  // Reference voltage
@@ -158,12 +160,23 @@ uint16_t map_angle_to_duty(float angle) {
     const uint16_t min_duty = 1;
     const uint16_t max_duty = 100;
     const float min_angle = 0.0f;
-    const float max_angle = 360;
+    const float max_angle = 3.3;
 
     if (angle < min_angle) angle = min_angle;
     if (angle > max_angle) angle = max_angle;
     
     return min_duty + (angle - min_angle) * (max_duty - min_duty) / (max_angle - min_angle);
+}
+uint16_t map_voltage_to_velocity(float voltage) {
+    const float min_vel = 0;
+    const float max_vel = 1000;
+    const float min_voltage = 0.0f;
+    const float max_voltage = 3.3;
+
+    if (voltage < min_voltage) voltage = min_voltage;
+    if (voltage > max_voltage) voltage = max_voltage;
+    
+    return min_vel + (voltage - min_voltage) * (max_vel - min_vel) / (max_voltage - min_voltage);
 }
 
 
@@ -203,6 +216,7 @@ void commutate(float angle, uint16_t DUTY) {
             break;
     }
 }
+MotorController_t motor;
 
 int main()
 {
@@ -212,75 +226,52 @@ int main()
     gpio_hal_init(&nSleep,&nSleep.settings);
     gpio_hal_init(&nFault,&nFault.settings); //initalise nFault, (input)
     
-    bool res = encoderHalInit(&encoder1);
+
     
     bool res2 = encoderHalInit(&encoder2);
 
-    nSleep.put(&nSleep,1); // enable DRV8317
 
-    pwm_hal_init(&pwmU);
-    pwm_hal_init(&pwmV);
-    pwm_hal_init(&pwmW);
-    pwmU.setDuty(&pwmU,10);
-    pwmU.setFreqHz(&pwmU, 50000);
-    pwmV.setDuty(&pwmV,10);
-    pwmV.setFreqHz(&pwmV, 50000);
-    pwmW.setDuty(&pwmW,10);
-    pwmW.setFreqHz(&pwmW, 50000);
+    motor.pwmU = &pwmU;
+    motor.pwmV = &pwmV;
+    motor.pwmW = &pwmW;
+    motor.encoder = &encoder2;
+    motor.pole_pairs = 7;
+    motor.max_duty = 50;
+    nSleep.put(&nSleep,1); // enable DRV8317
+    if (!motor_init(&motor)) {
+        // while(1) {printf("Motor init failed\n");}
+        nSleep.put(&nSleep,0); // enable DRV8317
+        return -1;
+    } 
+    
+    
+
+    
+    
     // Timer example code - This example fires off the callback after 2000ms
    
     // alarm_id_t alarm_id = add_alarm_in_ms(2000, alarm_callback, &encoder1, false);
   
     float angle = 0;
     while (true) {
-        // tight_loop_contents();
-        float voltage = read_pot_voltage();
-    
-        encoder1.read(&encoder1);
-        encoder2.read(&encoder2);
-        encoder1.process(&encoder1);
-        encoder2.process(&encoder2);
-            pwmU.start(&pwmU);
-            pwmV.start(&pwmV);
-            pwmW.start(&pwmW);
-        if (voltage <= 1) {
-            
-            #define POLE_PAIRS 7  // Replace with your actual motor's pole pair count
-
-            float mech_angle = encoder1.angleDegrees;
-            printf("mech angle encoder 2 %0.1f\n",mech_angle);
-            
-            float elec_angle = fmodf(mech_angle * POLE_PAIRS, 360.0f);
-            float theta = elec_angle * M_PI / 180.0f;
-
-            float Ua = sinf(theta);
-            float Ub = sinf(theta - 2 * M_PI / 3.0f);
-            float Uc = sinf(theta + 2 * M_PI / 3.0f);
-
-            // Map [-1,1] to [0,DUTY_MAX]
-            #define DUTY_MAX 10
-            uint16_t dutyA = (Ua + 1.0f) * 0.5f * DUTY_MAX;
-            uint16_t dutyB = (Ub + 1.0f) * 0.5f * DUTY_MAX;
-            uint16_t dutyC = (Uc + 1.0f) * 0.5f * DUTY_MAX;
-
-            pwmU.setDuty(&pwmU, dutyA);
-            pwmV.setDuty(&pwmV, dutyB);
-            pwmW.setDuty(&pwmW, dutyC);
-
-
-        } else {
-            pwmU.stop(&pwmU);
-            pwmV.stop(&pwmV);
-            pwmW.stop(&pwmW);
-        }
-        // float freq = map_angle_to_duty(encoder2.angleDegrees);
-        // pwmU.setFreqHz(&pwmU, freq);
-
+        // Read your input, e.g. pot voltage, map to max duty
+        float pot_voltage = read_pot_voltage();
+        // uint16_t duty = map_angle_to_duty(pot_voltage);
+        // motor_set_max_duty(&motor, duty);
+        float desiredVelocity = map_voltage_to_velocity(pot_voltage);
+        // Use encoder mechanical angle as target (or set some fixed target)
+        // motor_set_target_angle(&motor, motor.encoder->angleDegrees);
+        motor.velocity_setpoint = 10;
         
-            
+        // Update PWM outputs accordingly
+        // motor_update(&motor);
+        motor_open_loop_spin(&motor);
+        // printf("pot val %0.1f\n", pot_voltage);
         
-    
-        
-    
-    }
+        // Add delay or do other tasks
+        // sleep_ms(5);
+    }       
+    // while(1) {
+    //     sweep_gains(&motor);
+    // }
 }
