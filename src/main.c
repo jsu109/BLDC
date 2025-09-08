@@ -10,7 +10,7 @@
 #include "motor_control.h"
 // int64_t alarm_callback(alarm_id_t id, void *user_data) {
 //     encoderHal_t encoder = *((encoderHal_t *)user_data);
-//     uint16_t raw = encoder.read();
+    // uint16_t raw = encoder2.read();
 //     uint16_t angle = raw & 0x3FFF;
 //     uint8_t error = (raw >> 14) & 0x1;
 //      float degrees;
@@ -170,7 +170,7 @@ uint16_t map_angle_to_duty(float angle) {
 }
 uint16_t map_voltage_to_velocity(float voltage) {
     const float min_vel = 0;
-    const float max_vel = 1000;
+    const float max_vel = 10;
     const float min_voltage = 0.0f;
     const float max_voltage = 3.3;
 
@@ -245,6 +245,7 @@ int main()
     motor.encoder = &encoder2;
     motor.pole_pairs = 7;
     motor.max_duty = 50;
+    motor.elec_offset = 142;
     nSleep.put(&nSleep,1); // enable DRV8317
     if (!motor_init(&motor)) {
         // while(1) {printf("Motor init failed\n");}
@@ -268,13 +269,15 @@ int main()
         // motor_set_max_duty(&motor, duty);
         float desiredVelocity = map_voltage_to_velocity(pot_voltage);
         // Use encoder mechanical angle as target (or set some fixed target)
-        // motor_set_target_angle(&motor, motor.encoder->angleDegrees);
-        motor.velocity_setpoint = 10;
-        
+        motor_set_target_angle(&motor, motor.encoder->angleDegrees);
+        motor.velocity_setpoint = desiredVelocity;
         // Update PWM outputs accordingly
-        // motor_update(&motor);
-        motor_open_loop_spin(&motor);
-        // printf("pot val %0.1f\n", pot_voltage);
+        // motor_lock_angle(&motor, 270.0f); 
+        
+        
+        motor_update(&motor);
+        // motor_open_loop_spin(&motor);
+        printf("elecOffset %d\n", motor.elec_offset);
         
         // Add delay or do other tasks
         // sleep_ms(5);

@@ -53,7 +53,7 @@ typedef struct ENCODER_HAL {
     void (*init)(encoderHal_t *encoder);
     void (*config)(encoderHal_t *encoder);
     void (*read)(encoderHal_t *encoder);
-    void (*zero)(encoderHal_t *encoder1);
+    void (*zero)(encoderHal_t *encoder);
     void (*process)(encoderHal_t *encoder);
 } encoderHal_t;
 

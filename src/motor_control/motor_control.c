@@ -27,7 +27,7 @@ bool motor_init(MotorController_t *motor) {
     motor->target_elec_angle = 0;
     motor->velocity_setpoint = 0.0f;
     motor->velocity_error_integral = 0.0f;
-    motor->kp_velocity = 0.1f; // Tune these values
+    motor->kp_velocity = 0.03f; // Tune these values
     motor->ki_velocity = 0.01f;
     return true;
      
@@ -53,7 +53,7 @@ void motor_update(MotorController_t *motor) {
     const float open_loop_speed = 0.05f;   // radians per call, adjust for startup speed
     const uint16_t open_loop_duty = 50;    // duty cycle %, increase if motor won't start
     const float VELOCITY_DEADBAND = 0.2f;  // velocity threshold to switch control modes (deg/s)
-    const float electrical_offset_deg = 0.0f; // tune this experimentally
+    const float electrical_offset_deg = motor->elec_offset;// tune this experimentally
 
     // Read encoder
     motor->encoder->read(motor->encoder);
@@ -109,14 +109,15 @@ void motor_update(MotorController_t *motor) {
     // Closed-loop velocity PI controller
 
     float error = motor->velocity_setpoint - velocity;
-    // printf("error %0.1f\n", error);
+    
 
     motor->velocity_error_integral += error * dt;
     if (motor->velocity_error_integral > 100.0f) motor->velocity_error_integral = 100.0f;
     if (motor->velocity_error_integral < -100.0f) motor->velocity_error_integral = -100.0f;
 
     float control_output = motor->kp_velocity * error + motor->ki_velocity * motor->velocity_error_integral;
-
+    printf("setpoint=%.1f, vel=%.1f, error=%.1f, output=%.1f\n",
+        motor->velocity_setpoint, velocity, error, control_output);
     // Startup torque bias if velocity zero but setpoint nonzero
     const float STARTUP_TORQUE = 30.0f;
     if (velocity == 0.0f && motor->velocity_setpoint != 0.0f) {
@@ -146,14 +147,36 @@ void motor_update(MotorController_t *motor) {
     motor->pwmV->setDuty(motor->pwmV, dutyB);
     motor->pwmW->setDuty(motor->pwmW, dutyC);
 }
+void motor_lock_angle(MotorController_t *motor, float elec_angle_deg) {
+    if (!motor) return;
+    motor->encoder->read(motor->encoder);
+    encoderHal_updateTimestamp(motor->encoder);
+    motor->encoder->process(motor->encoder);
+    encoderHal_updateVelocity(motor->encoder);
+// Include electrical offset
+    float theta = fmodf(elec_angle_deg + motor->elec_offset, 360.0f) * (M_PI / 180.0f);
 
+    float Ua = sinf(theta);
+    float Ub = sinf(theta - 2.0f * M_PI / 3.0f);
+    float Uc = sinf(theta + 2.0f * M_PI / 3.0f);
+
+    const uint16_t lock_duty = 60; // strong enough to hold rotor
+
+    uint16_t dutyA = (uint16_t)((Ua + 1.0f) * 0.5f * lock_duty);
+    uint16_t dutyB = (uint16_t)((Ub + 1.0f) * 0.5f * lock_duty);
+    uint16_t dutyC = (uint16_t)((Uc + 1.0f) * 0.5f * lock_duty);
+
+    motor->pwmU->setDuty(motor->pwmU, dutyA);
+    motor->pwmV->setDuty(motor->pwmV, dutyB);
+    motor->pwmW->setDuty(motor->pwmW, dutyC);
+}
 
 void motor_open_loop_spin(MotorController_t *motor) {
     if (!motor) return;
 
     // Static variables to keep track of angle
     static float open_loop_theta = 0.0f;   // radians
-    const float open_loop_speed = 0.00005f;   // radians per call, adjust for speed
+    const float open_loop_speed = 0.0005f;   // radians per call, adjust for speed
     const uint16_t open_loop_duty = 50;    // duty cycle %, increase if motor won't start
 
     // Increment angle (wrap around 2*PI)

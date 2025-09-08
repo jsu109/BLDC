@@ -17,6 +17,7 @@ typedef struct {
 
     // Number of pole pairs
     uint8_t pole_pairs;
+    uint8_t elec_offset;
 
     // Current target electrical angle (degrees)
     float target_elec_angle;
@@ -40,6 +41,9 @@ void motor_set_max_duty(MotorController_t *motor, uint16_t duty);
 
 // Set mechanical angle target in degrees
 void motor_set_target_angle(MotorController_t *motor, float mech_angle);
+
+// test code
+void motor_lock_angle(MotorController_t *motor, float elec_angle_deg);
 
 // Call regularly to update PWM outputs based on encoder and target angle
 void motor_update(MotorController_t *motor);

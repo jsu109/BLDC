@@ -75,7 +75,7 @@ void encoderHal_updateVelocity(encoderHal_t *encoder)
     if (encoder == NULL || encoder->deltaTimeMs == 0) {
         return; // Safety check
     }
-
+    
     // Calculate change in angle
     float deltaAngle = encoder->angleDegrees - encoder->lastAngleDegrees;
     
