@@ -58,10 +58,9 @@ typedef struct ENCODER_HAL {
 } encoderHal_t;
 
 bool encoderHalInit(encoderHal_t *encoder);
+void encoderHal_updateAngle(encoderHal_t *encoder);
 void encoderHal_updateTimestamp(encoderHal_t *encoder);
 void encoderHal_updateVelocity(encoderHal_t *encoder);
-bool encoderHalInit(encoderHal_t *encoder);
-void encoderHal_updateTimestamp(encoderHal_t *encoder);
-void encoderHal_updateVelocity(encoderHal_t *encoder);
+
 
 #endif  // encoder_HAL_H

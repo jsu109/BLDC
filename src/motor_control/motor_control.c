@@ -1,6 +1,7 @@
 #include "motor_control.h"
 #include <math.h>
 #include <stdio.h>
+#include "pico/time.h"
 
 bool motor_init(MotorController_t *motor) {
     if (!motor || !motor->pwmU || !motor->pwmV || !motor->pwmW || !motor->encoder) return false;
@@ -21,213 +22,176 @@ bool motor_init(MotorController_t *motor) {
     if (!encoderHalInit(motor->encoder)) {
         return false; 
     } 
-    // Set some defaults
-    motor->max_duty = 50;
-    motor->pole_pairs = 7;
-    motor->target_elec_angle = 0;
-    motor->velocity_setpoint = 0.0f;
-    motor->velocity_error_integral = 0.0f;
-    motor->kp_velocity = 0.03f; // Tune these values
-    motor->ki_velocity = 0.01f;
+   
     return true;
      
 }
 
-void motor_set_max_duty(MotorController_t *motor, uint16_t duty) {
-    if (duty > 100) duty = 80;
-    motor->max_duty = duty;
-}
 
 void motor_set_target_angle(MotorController_t *motor, float mech_angle) {
     // Convert mechanical angle to electrical angle based on pole pairs
-    float elec_angle = fmodf(mech_angle * motor->pole_pairs, 360.0f);
-    motor->target_elec_angle = elec_angle;
+    float elec_angle_deg = fmodf(-mech_angle * motor->pole_pairs + motor->elec_offset, 360.0f);
+    if (elec_angle_deg < 0) elec_angle_deg += 360.0f;
 }
 
-void motor_update(MotorController_t *motor) {
-    if (!motor) return;
+void motor_step_lock_test(MotorController_t *motor, float duty_percent) {
+    for (int angle = 0; angle < 360; angle += 30) {
+        float theta = angle * (M_PI / 180.0f);
 
-    // Static variables for open-loop startup and closed-loop mode
-    static bool closed_loop_enabled = false;
-    static float open_loop_theta = 0.0f;   // radians
-    const float open_loop_speed = 0.05f;   // radians per call, adjust for startup speed
-    const uint16_t open_loop_duty = 50;    // duty cycle %, increase if motor won't start
-    const float VELOCITY_DEADBAND = 0.2f;  // velocity threshold to switch control modes (deg/s)
-    const float electrical_offset_deg = motor->elec_offset;// tune this experimentally
+        float Ua = sinf(theta);
+        float Ub = sinf(theta - 2.0f * M_PI / 3.0f);
+        float Uc = sinf(theta + 2.0f * M_PI / 3.0f);
 
-    // Read encoder
-    motor->encoder->read(motor->encoder);
-    encoderHal_updateTimestamp(motor->encoder);
-    motor->encoder->process(motor->encoder);
-    encoderHal_updateVelocity(motor->encoder);
-
-    float mech_angle = motor->encoder->angleDegrees;
-    float raw_velocity = motor->encoder->velocityDegPerSec;
-
-    // Low-pass filter velocity (simple exponential filter)
-    static float filtered_velocity = 0;
-    const float alpha = 0.05f;  // filter smoothing factor (0-1)
-    filtered_velocity = alpha * raw_velocity + (1 - alpha) * filtered_velocity;
-
-    // Apply deadband to velocity
-    float velocity = (fabsf(filtered_velocity) < VELOCITY_DEADBAND) ? 0.0f : filtered_velocity;
-
-    // Time delta in seconds
-    float dt = motor->encoder->deltaTimeMs * 0.001f;
-    if (dt <= 0) dt = 0.001f;  // fallback small dt
-
-    // printf("actual velocity %0.1f\n", velocity);
-    // printf("motor velocity set point %0.1f\n", motor->velocity_setpoint);
-
-    if (!closed_loop_enabled) {
-        // Open-loop startup: increment internal angle and generate PWM
-        open_loop_theta += open_loop_speed;
-        if (open_loop_theta > 2.0f * M_PI) open_loop_theta -= 2.0f * M_PI;
-
-        float Ua = sinf(open_loop_theta);
-        float Ub = sinf(open_loop_theta - 2.0f * M_PI / 3.0f);
-        float Uc = sinf(open_loop_theta + 2.0f * M_PI / 3.0f);
-
-        uint16_t dutyA = (uint16_t)((Ua + 1.0f) * 0.5f * open_loop_duty);
-        uint16_t dutyB = (uint16_t)((Ub + 1.0f) * 0.5f * open_loop_duty);
-        uint16_t dutyC = (uint16_t)((Uc + 1.0f) * 0.5f * open_loop_duty);
+        uint16_t dutyA = (uint16_t)((Ua + 1.0f) * 0.5f * duty_percent);
+        uint16_t dutyB = (uint16_t)((Ub + 1.0f) * 0.5f * duty_percent);
+        uint16_t dutyC = (uint16_t)((Uc + 1.0f) * 0.5f * duty_percent);
 
         motor->pwmU->setDuty(motor->pwmU, dutyA);
         motor->pwmV->setDuty(motor->pwmV, dutyB);
         motor->pwmW->setDuty(motor->pwmW, dutyC);
+        motor->encoder->read(motor->encoder);
+        motor->encoder->process(motor->encoder);
+        printf("Lock angle %3d°, duties U:%u V:%u W:%u, encoderAngle:%0.1f\n", angle, dutyA, dutyB, dutyC,motor->encoder->angleDegrees);
 
-        // Switch to closed loop when velocity is above deadband and setpoint nonzero
-        if ((fabsf(velocity) > VELOCITY_DEADBAND) && (motor->velocity_setpoint != 0.0f)) {
-            closed_loop_enabled = true;
-            motor->velocity_error_integral = 0.0f; // Reset integral
-            // printf("Switching to closed loop control\n");
-        }
-
-        return; // skip closed loop control in open loop mode
+        sleep_ms(1000);
     }
 
-    // Closed-loop velocity PI controller
+    // turn off PWM after test
+    motor->pwmU->setDuty(motor->pwmU, 0);
+    motor->pwmV->setDuty(motor->pwmV, 0);
+    motor->pwmW->setDuty(motor->pwmW, 0);
+}
 
-    float error = motor->velocity_setpoint - velocity;
-    
+void motor_open_loop_spin(MotorController_t *motor, float target_rpm, float duty_percent) {
+    static float theta_deg = 0.0f;
 
-    motor->velocity_error_integral += error * dt;
-    if (motor->velocity_error_integral > 100.0f) motor->velocity_error_integral = 100.0f;
-    if (motor->velocity_error_integral < -100.0f) motor->velocity_error_integral = -100.0f;
+    // electrical speed (deg/s) = mech_rpm * pole_pairs * 360 / 60
+    float elec_speed_deg_per_sec = (target_rpm * motor->pole_pairs * 360.0f) / 60.0f;
 
-    float control_output = motor->kp_velocity * error + motor->ki_velocity * motor->velocity_error_integral;
-    printf("setpoint=%.1f, vel=%.1f, error=%.1f, output=%.1f\n",
-        motor->velocity_setpoint, velocity, error, control_output);
-    // Startup torque bias if velocity zero but setpoint nonzero
-    const float STARTUP_TORQUE = 30.0f;
-    if (velocity == 0.0f && motor->velocity_setpoint != 0.0f) {
-        if (control_output < STARTUP_TORQUE) control_output = STARTUP_TORQUE;
-    }
+    // step per control period
+    float step_deg = elec_speed_deg_per_sec * (CONTROL_PERIOD_MS / 1000.0f);
 
-    if (control_output < 0) control_output = 0;
-    if (control_output > motor->max_duty) control_output = motor->max_duty;
+    // accumulate theta
+    theta_deg += step_deg;
+    if (theta_deg >= 360.0f) theta_deg -= 360.0f;
+    if (theta_deg < 0.0f)    theta_deg += 360.0f;
 
-    uint16_t duty_limit = (uint16_t)control_output;
+    // convert to radians for sinf()
+    float theta_rad = theta_deg * (M_PI / 180.0f);
 
-    // Calculate electrical angle with offset and convert to radians
-    float elec_angle_deg = fmodf(-mech_angle * motor->pole_pairs + electrical_offset_deg, 360.0f);
-    if (elec_angle_deg < 0) elec_angle_deg += 360.0f;
+    // generate 3-phase sinusoids
+    float Ua = sinf(theta_rad);
+    float Ub = sinf(theta_rad - 2.0f * M_PI / 3.0f);
+    float Uc = sinf(theta_rad + 2.0f * M_PI / 3.0f);
 
-    float theta = elec_angle_deg * (M_PI / 180.0f);
+    // map -1..+1 to 0..duty_percent
+    uint16_t dutyA = (uint16_t)((Ua + 1.0f) * 0.5f * duty_percent);
+    uint16_t dutyB = (uint16_t)((Ub + 1.0f) * 0.5f * duty_percent);
+    uint16_t dutyC = (uint16_t)((Uc + 1.0f) * 0.5f * duty_percent);
 
-    float Ua = sinf(theta);
-    float Ub = sinf(theta - 2.0f * M_PI / 3.0f);
-    float Uc = sinf(theta + 2.0f * M_PI / 3.0f);
-
-    uint16_t dutyA = (uint16_t)((Ua + 1.0f) * 0.5f * duty_limit);
-    uint16_t dutyB = (uint16_t)((Ub + 1.0f) * 0.5f * duty_limit);
-    uint16_t dutyC = (uint16_t)((Uc + 1.0f) * 0.5f * duty_limit);
-
+    // apply to PWM
     motor->pwmU->setDuty(motor->pwmU, dutyA);
     motor->pwmV->setDuty(motor->pwmV, dutyB);
     motor->pwmW->setDuty(motor->pwmW, dutyC);
-}
-void motor_lock_angle(MotorController_t *motor, float elec_angle_deg) {
-    if (!motor) return;
     motor->encoder->read(motor->encoder);
-    encoderHal_updateTimestamp(motor->encoder);
     motor->encoder->process(motor->encoder);
-    encoderHal_updateVelocity(motor->encoder);
-// Include electrical offset
-    float theta = fmodf(elec_angle_deg + motor->elec_offset, 360.0f) * (M_PI / 180.0f);
 
-    float Ua = sinf(theta);
-    float Ub = sinf(theta - 2.0f * M_PI / 3.0f);
-    float Uc = sinf(theta + 2.0f * M_PI / 3.0f);
+    // debug
+    printf("encoder%.1f deg, theta %.1f deg, duties U:%u V:%u W:%u\n", motor->encoder->angleDegrees,theta_deg, dutyA, dutyB, dutyC);
+}
 
-    const uint16_t lock_duty = 60; // strong enough to hold rotor
 
-    uint16_t dutyA = (uint16_t)((Ua + 1.0f) * 0.5f * lock_duty);
-    uint16_t dutyB = (uint16_t)((Ub + 1.0f) * 0.5f * lock_duty);
-    uint16_t dutyC = (uint16_t)((Uc + 1.0f) * 0.5f * lock_duty);
+// --- Velocity Update Parameters ---
+#define VELOCITY_UPDATE_INTERVAL_S 0.001f  // update every 1 ms
+#define VELOCITY_FILTER_ALPHA      0.05f  // exponential smoothing factor (0-1)
 
+void motor_update_velocity(MotorController_t *motor, float dt_s) {
+    // Accumulate time
+    encoderHal_updateAngle(motor->encoder);
+    encoderHal_updateTimestamp(motor->encoder);
+    static float vel_timer = 0.0f;
+    vel_timer += dt_s;
+
+    if (vel_timer < VELOCITY_UPDATE_INTERVAL_S) {
+        // Not enough time elapsed to update velocity
+        return;
+    }
+
+    // Compute delta angle since last velocity update
+    float deltaAngle = motor->encoder->angleDegrees - motor->last_angle_deg;
+
+    // Handle encoder wraparound (0-360 deg)
+    if (deltaAngle > 180.0f)  deltaAngle -= 360.0f;
+    if (deltaAngle < -180.0f) deltaAngle += 360.0f;
+
+    // Compute raw velocity (deg/sec)
+   float  deltaMS = motor->encoder->deltaTimeMs;
+   float deltaS = deltaMS/1000;
+    float new_velocity = deltaAngle / (deltaMS/1000); //in degrees/s
+    printf("deltaTime (s): %.4f\n",deltaS);
+    // Exponential smoothing
+    motor->velocity_dps = new_velocity;//= VELOCITY_FILTER_ALPHA * new_velocity +
+                         // (1.0f - VELOCITY_FILTER_ALPHA) * motor->velocity_dps;
+
+    // Store last angle for next update
+    motor->last_angle_deg = motor->encoder->angleDegrees;
+
+    // Reset timer
+    vel_timer = 0.0f;
+}
+
+
+void motor_velocity_control(MotorController_t *motor, float target_dps, float duty_max, float dt_s) {
+    // 1) Compute error
+    float error = target_dps - motor->velocity_dps;
+
+    // 2) PI control
+    motor->integral += error * dt_s;
+    float output = KP_VEL * error; //+ KI_VEL * motor->integral;
+
+    // 3) Clamp output to max/min
+    if (output > duty_max) output = duty_max;
+    if (output < -duty_max) output = -duty_max;
+
+    // 4) Apply minimum effective duty for low speed
+    if (output > 0 && output < MIN_EFFECTIVE_DUTY) output = MIN_EFFECTIVE_DUTY;
+    if (output < 0 && output > -MIN_EFFECTIVE_DUTY) output = -MIN_EFFECTIVE_DUTY;
+
+    // 5) Increment electrical angle based on target velocity
+    static float theta_deg = 0.0f; // keep persistent between calls
+    theta_deg += target_dps * motor->pole_pairs * dt_s; // small step per loop
+
+    if (output < 0) {
+        output = -output;   // magnitude
+        theta_deg += 180.0f; // reverse torque
+    }
+
+    // Wrap theta to 0-360
+    if (theta_deg >= 360.0f) theta_deg -= 360.0f;
+    if (theta_deg < 0.0f)    theta_deg += 360.0f;
+
+    // 6) Compute electrical angle in radians
+    float theta_rad = theta_deg * (M_PI / 180.0f);
+
+    // generate 3-phase sinusoids
+    float Ua = sinf(theta_rad);
+    float Ub = sinf(theta_rad - 2.0f * M_PI / 3.0f);
+    float Uc = sinf(theta_rad + 2.0f * M_PI / 3.0f);
+
+    // map -1..+1 to 0..duty_percent
+    uint16_t dutyA = (uint16_t)((Ua + 1.0f) * 0.5f * output);
+    uint16_t dutyB = (uint16_t)((Ub + 1.0f) * 0.5f * output);
+    uint16_t dutyC = (uint16_t)((Uc + 1.0f) * 0.5f * output);
+
+    // apply to PWM
     motor->pwmU->setDuty(motor->pwmU, dutyA);
     motor->pwmV->setDuty(motor->pwmV, dutyB);
     motor->pwmW->setDuty(motor->pwmW, dutyC);
-}
 
-void motor_open_loop_spin(MotorController_t *motor) {
-    if (!motor) return;
+    // update encoder
+    motor->encoder->read(motor->encoder);
+    motor->encoder->process(motor->encoder);
 
-    // Static variables to keep track of angle
-    static float open_loop_theta = 0.0f;   // radians
-    const float open_loop_speed = 0.0005f;   // radians per call, adjust for speed
-    const uint16_t open_loop_duty = 50;    // duty cycle %, increase if motor won't start
-
-    // Increment angle (wrap around 2*PI)
-    open_loop_theta += open_loop_speed;
-    if (open_loop_theta > 2.0f * M_PI) {
-        open_loop_theta -= 2.0f * M_PI;
-    }
-
-    // Calculate phase voltages as sinusoids
-    float Ua = sinf(open_loop_theta);
-    float Ub = sinf(open_loop_theta - 2.0f * M_PI / 3.0f);
-    float Uc = sinf(open_loop_theta + 2.0f * M_PI / 3.0f);
-
-    // Convert to PWM duty based on open loop duty limit
-    uint16_t dutyA = (uint16_t)((Ua + 1.0f) * 0.5f * open_loop_duty);
-    uint16_t dutyB = (uint16_t)((Ub + 1.0f) * 0.5f * open_loop_duty);
-    uint16_t dutyC = (uint16_t)((Uc + 1.0f) * 0.5f * open_loop_duty);
-
-    // Set PWM duties
-    motor->pwmU->setDuty(motor->pwmU, dutyA);
-    motor->pwmV->setDuty(motor->pwmV, dutyB);
-    motor->pwmW->setDuty(motor->pwmW, dutyC);
-}
-
-float kp_values[] = {0.01f, 0.02f, 0.03f, 0.04f, 0.05f, 0.06f,0.07f, 0.08f};
-float ki_values[] = {0.005f, 0.01f,0.015f,0.02f, 0.03f};
-int num_kp = sizeof(kp_values) / sizeof(kp_values[0]);
-int num_ki = sizeof(ki_values) / sizeof(ki_values[0]);
-
-void sweep_gains(MotorController_t *motor) {
-    for (int i = 0; i < num_kp; i++) {
-        for (int j = 0; j < num_ki; j++) {
-            motor->kp_velocity = kp_values[i];
-            motor->ki_velocity = ki_values[j];
-
-            printf("Testing Kp=%.3f, Ki=%.3f\n", motor->kp_velocity, motor->ki_velocity);
-
-            // Reset integral term
-            motor->velocity_error_integral = 0.0f;
-
-            // Set some test velocity setpoint, e.g. 50 deg/s
-            motor->velocity_setpoint = 10.0f;
-
-            // Run your motor update loop for some duration or iterations
-            for (int step = 0; step < 10000; step++) {
-                motor_update(motor);
-                // Add delay here if necessary for timing, e.g. 10 ms
-            }
-
-            // Optionally, record results, check overshoot, steady state error, etc.
-            // You might want to add a mechanism to capture these metrics.
-        }
-    }
+    printf("encoder%.1f deg, theta %.1f deg, duties U:%u V:%u W:%u, output: %0.1f error: %.1f\n",
+           motor->encoder->angleDegrees, theta_deg, dutyA, dutyB, dutyC, output, error);
 }

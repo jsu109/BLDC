@@ -40,7 +40,9 @@ bool encoderHalInit(encoderHal_t *hal)
         
         //initalise SPI for encoder
         spi_hal_init(&hal->comm.spi.spiInst,&hal->comm.spi.spiSettings,&hal->comm.spi.spiData,&hal->cs_gpioInst);
+        hal->lastAngleDegrees = 0;
         timer_hal_init(&hal->timer);
+        hal->lastTimestampMs =0;
         hal->comm.spi.spiInst.config(&hal->comm.spi.spiSettings);
         hal->init(hal);
         return 1;
@@ -53,6 +55,15 @@ bool encoderHalInit(encoderHal_t *hal)
 }
 
 
+void encoderHal_updateAngle(encoderHal_t *encoder) {
+    if (encoder == NULL) {
+        
+        return; // Safety check
+    }
+    encoder->read(encoder);
+    encoder->process(encoder);
+    
+}
 void encoderHal_updateTimestamp(encoderHal_t *encoder)
 {
     if (encoder == NULL) {
@@ -67,6 +78,7 @@ void encoderHal_updateTimestamp(encoderHal_t *encoder)
     
     // Store the new timestamp
     encoder->lastTimestampMs = now;
+    
 }
 
 void encoderHal_updateVelocity(encoderHal_t *encoder)
@@ -78,7 +90,7 @@ void encoderHal_updateVelocity(encoderHal_t *encoder)
     
     // Calculate change in angle
     float deltaAngle = encoder->angleDegrees - encoder->lastAngleDegrees;
-    
+    printf("delta angle %0.f\n", deltaAngle);
     // Handle wrap-around for angles (e.g., jumping from 359 to 0 degrees)
     if (deltaAngle > 180.0f) {
         deltaAngle -= 360.0f;
@@ -87,7 +99,11 @@ void encoderHal_updateVelocity(encoderHal_t *encoder)
     }
 
     // Convert delta angle and delta time to velocity
-    float velocityDegPerSec = deltaAngle / ((float)encoder->deltaTimeMs / 1000.0f);
+    // convert to seconds safely
+    printf("deltaTimeMS %d\n", encoder->deltaTimeMs);
+    float dt_s = (float)encoder->deltaTimeMs / 1000.0f;
+    if (dt_s <= 0.001f) dt_s = 0.001f;
+    float velocityDegPerSec = -deltaAngle / dt_s;
     float velocityRPM = (velocityDegPerSec / 360.0f) * 60.0f;
     // Store results
     encoder->velocityDegPerSec = velocityDegPerSec;
