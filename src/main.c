@@ -8,6 +8,7 @@
 #include "pwm_hal.h"
 #include "timer_hal.h"
 #include "motor_control.h"
+#include <math.h>
 // int64_t alarm_callback(alarm_id_t id, void *user_data) {
 //     encoderHal_t encoder = *((encoderHal_t *)user_data);
     // uint16_t raw = encoder2.read();
@@ -237,7 +238,7 @@ int main()
     motor.pwmW = &pwmW;
     motor.encoder = &encoder2;
     motor.pole_pairs = 7;
-    motor.elec_offset = 0;//142;
+    motor.elec_offset = 161;
     nSleep.put(&nSleep,1); // enable DRV8317
     if (!motor_init(&motor)) {
         // while(1) {printf("Motor init failed\n");}
@@ -254,27 +255,34 @@ int main()
     // alarm_id_t alarm_id = add_alarm_in_ms(2000, alarm_callback, &encoder1, false);
   
     float angle = 0;
-
+    // motor_calibrate_offset(&motor, 40);
+    motor_startup(&motor, 300);
+    
     while (true) {
+       
         // Read your input, e.g. pot voltage, map to max duty
         float pot_voltage = read_pot_voltage();
         // uint16_t duty = map_angle_to_duty(pot_voltage);
         // motor_set_max_duty(&motor, duty);
         float desiredVelocity = map_voltage_to_velocity(pot_voltage);
-        
+        // if (fabsf(desiredVelocity) <= 35) {
+        //     desiredVelocity = 0;
+        // }
         // printf("desired setpoint: %0.1f\n",motor.velocity_setpoint);
         // Update PWM outputs accordingly
         // motor_lock_angle(&motor, 270.0f); 
         
-        motor.elec_offset = desiredVelocity;
+        // motor.elec_offset = desiredVelocity;
         // motor_update(&motor);
         // 1 ms control loop
-        float target_velocity_dps =100;
+        // motor.elec_offset = desiredVelocity;
+        // printf("elecOffset: %.1f\n", desiredVelocity);
+        float target_velocity_dps = desiredVelocity;
         float dt_s = CONTROL_PERIOD_MS / 1000.0f;
 
 
-        motor_update_velocity(&motor, dt_s);
-        motor_velocity_control(&motor, target_velocity_dps,MAX_DUTY,dt_s);
+        // motor_update_velocity(&motor, dt_s);
+        motor_velocity_control(&motor,target_velocity_dps,dt_s);
 
         sleep_ms(CONTROL_PERIOD_MS);
         // printf("elecOffset %d\n", motor.elec_offset);
