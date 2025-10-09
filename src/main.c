@@ -1,11 +1,13 @@
 #include <stdio.h>
 #include "sysType.h"
 #include "pico/stdlib.h"
+#include <stdlib.h>
 #include "hardware/timer.h"
 #include "hardware/adc.h"
 #include "encoder_hal.h"
 #include "gpio_hal.h"
 #include "pwm_hal.h"
+#include "adc_hal.h"
 #include "timer_hal.h"
 #include "motor_control.h"
 #include <math.h>
@@ -139,6 +141,10 @@ GPIO_hal_t nFault = {
     },
 };
 
+
+
+
+
 GPIO_hal_t led;
 GPIO_settings_t led_settings = {
     .gpioPin = 25,
@@ -170,8 +176,8 @@ uint16_t map_angle_to_duty(float angle) {
     return min_duty + (angle - min_angle) * (max_duty - min_duty) / (max_angle - min_angle);
 }
 float map_voltage_to_velocity(float voltage) {
-    const float min_vel = 0;
-    const float max_vel = 360;
+    const float min_vel = -1000;
+    const float max_vel = 1000;
     const float min_voltage = 0.0f;
     const float max_voltage = 3.3;
 
@@ -181,7 +187,71 @@ float map_voltage_to_velocity(float voltage) {
     return min_vel + (voltage - min_voltage) * (max_vel - min_vel) / (max_voltage - min_voltage);
 }
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "pico/stdlib.h"
+#include "motor_control.h"
 
+#define INPUT_BUF_SIZE 16
+#define VELOCITY_STEP 100.0f   // deg/s per arrow press
+#define VELOCITY_STEP_SMALL 10.0f   // deg/s per arrow press
+static char input_buf[INPUT_BUF_SIZE];
+static uint8_t input_pos = 0;
+
+// Escape sequence buffer for arrow keys
+static char esc_seq[3];
+static uint8_t esc_pos = 0;
+
+void process_user_input(MotorController_t *motor) {
+    int c = getchar_timeout_us(0);  // Non-blocking
+    if (c == PICO_ERROR_TIMEOUT) return;
+
+    // Handle ESC sequence for arrow keys
+    if (esc_pos > 0 || c == 27) {  // ESC received
+        esc_seq[esc_pos++] = (char)c;
+
+        if (esc_pos == 3) {  // Full arrow key sequence
+            if (esc_seq[0] == 27 && esc_seq[1] == 91) {  // ESC [
+                switch (esc_seq[2]) {
+                    case 'A': motor->target_velocity_dps += VELOCITY_STEP; break;  // Up
+                    case 'B': motor->target_velocity_dps -= VELOCITY_STEP; break;  // Down
+                    case 'C': motor->target_velocity_dps += VELOCITY_STEP_SMALL / 2; break; // Right
+                    case 'D': motor->target_velocity_dps -= VELOCITY_STEP_SMALL / 2; break; // Left
+                }
+                printf("Arrow key input -> target_velocity: %.1f deg/s\n", motor->target_velocity_dps);
+            }
+            esc_pos = 0;  // Reset for next sequence
+        }
+        return;
+    }
+
+    // Handle typed numbers (0-9) and Enter
+    if (c >= '0' && c <= '9') {
+        if (input_pos < INPUT_BUF_SIZE - 1) {
+            input_buf[input_pos++] = (char)c;
+            printf("%c", c);  // Echo back
+        }
+    } else if (c == '\r' || c == '\n') {
+        input_buf[input_pos] = '\0';
+        if (input_pos > 0) {
+            char *endptr;
+            float val = strtof(input_buf, &endptr);
+            if (endptr != input_buf) {
+                motor->target_velocity_dps = val;
+                printf("\nTyped input -> target_velocity: %.1f deg/s\n", motor->target_velocity_dps);
+            }
+        }
+        input_pos = 0;  // Reset buffer
+    } else if (c == 127 || c == '\b') {  // Handle backspace
+        if (input_pos > 0) {
+            input_pos--;
+            printf("\b \b");  // Erase character
+        }
+    } else {
+        // Ignore other characters
+    }
+}
 void commutate(float angle, uint16_t DUTY) {
     uint8_t sector = ((int)(angle / 60.0f)) % 6;
 
@@ -238,7 +308,8 @@ int main()
     motor.pwmW = &pwmW;
     motor.encoder = &encoder2;
     motor.pole_pairs = 7;
-    motor.elec_offset = 161;
+    motor.elec_offset = 132;
+    motor.Vbus = 16;
     nSleep.put(&nSleep,1); // enable DRV8317
     if (!motor_init(&motor)) {
         // while(1) {printf("Motor init failed\n");}
@@ -256,7 +327,7 @@ int main()
   
     float angle = 0;
     // motor_calibrate_offset(&motor, 40);
-    motor_startup(&motor, 300);
+    // motor_startup(&motor, 300);
     
     while (true) {
        
@@ -265,24 +336,24 @@ int main()
         // uint16_t duty = map_angle_to_duty(pot_voltage);
         // motor_set_max_duty(&motor, duty);
         float desiredVelocity = map_voltage_to_velocity(pot_voltage);
-        // if (fabsf(desiredVelocity) <= 35) {
-        //     desiredVelocity = 0;
-        // }
-        // printf("desired setpoint: %0.1f\n",motor.velocity_setpoint);
+        if (fabsf(desiredVelocity) <= 35) {
+            desiredVelocity = 0;
+        }
+        // printf("desired setpoint: %0.1f\n",desiredVelocity);
         // Update PWM outputs accordingly
         // motor_lock_angle(&motor, 270.0f); 
         
-        // motor.elec_offset = desiredVelocity;
+        
         // motor_update(&motor);
         // 1 ms control loop
         // motor.elec_offset = desiredVelocity;
         // printf("elecOffset: %.1f\n", desiredVelocity);
+        
         float target_velocity_dps = desiredVelocity;
         float dt_s = CONTROL_PERIOD_MS / 1000.0f;
-
-
-        // motor_update_velocity(&motor, dt_s);
-        motor_velocity_control(&motor,target_velocity_dps,dt_s);
+        process_user_input(&motor)
+;        // motor_update_velocity(&motor, dt_s);
+        motor_velocity_control(&motor,motor.target_velocity_dps,dt_s);
 
         sleep_ms(CONTROL_PERIOD_MS);
         // printf("elecOffset %d\n", motor.elec_offset);

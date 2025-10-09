@@ -2,6 +2,8 @@
 #include <math.h>
 #include <stdio.h>
 #include "pico/stdlib.h"
+#include "transform.h"
+
 // --- Field-Oriented Control (Voltage-based) ---
 // Uses velocity PI to generate Iq-like voltage command
 // Id_ref = 0 (optimal flux), inverse Park -> alpha-beta -> three-phase -> PWM
@@ -13,12 +15,12 @@ static inline float clampf(float v, float lo, float hi) {
 }
 
 // Inverse Park: vd,vq -> v_alpha,v_beta
-static inline void inv_park(float vd, float vq, float theta_rad, float *v_alpha, float *v_beta) {
-    float c = cosf(theta_rad);
-    float s = sinf(theta_rad);
-    *v_alpha = vd * c - vq * s;
-    *v_beta  = vd * s + vq * c;
-}
+// static inline void inv_park(float vd, float vq, float theta_rad, float *v_alpha, float *v_beta) {
+//     float c = cosf(theta_rad);
+//     float s = sinf(theta_rad);
+//     *v_alpha = vd * c - vq * s;
+//     *v_beta  = vd * s + vq * c;
+// }
 
 // Alpha-beta -> three-phase (Clarke inverse)
 static inline void alpha_beta_to_abc(float v_alpha, float v_beta, float *Va, float *Vb, float *Vc) {
@@ -114,9 +116,9 @@ void motor_velocity_control(MotorController_t *motor, float target_velocity_dps,
     
     
     // FOC: Id = 0, Vq = Iq_ref
-    float Vd = 0.0f;
-    float Vq = Iq_ref;
-
+    motor->invParkIn.Vd = 0.0f;
+    motor->invParkIn.Vq = Iq_ref;
+    
     // Electrical angle
     float mech_deg = motor->encoder->angleDegrees;
     float elec_deg = fmodf(-mech_deg * motor->pole_pairs + motor->elec_offset, 360.0f);
@@ -124,26 +126,26 @@ void motor_velocity_control(MotorController_t *motor, float target_velocity_dps,
     motor->theta_elec = elec_deg;
     float theta_rad = elec_deg * (3.14159265358979323846f / 180.0f);
     
-    // Inverse Park
-    float v_alpha, v_beta;
-    inv_park(Vd, Vq, theta_rad, &v_alpha, &v_beta);
-   
-    // Alpha-beta -> 3-phase
-    float Va, Vb, Vc;
-    alpha_beta_to_abc(v_alpha, v_beta, &Va, &Vb, &Vc);
+
+    motor->invParkIn.cos = cos(theta_rad);
+    motor->invParkIn.sin = sin(theta_rad);
+
+    
+    inv_park(&motor->invParkIn,&motor->ab_voltages);
+    inv_clarke(&motor->ab_voltages, &motor->invClarkeOut);
      
     // Scale to Iq_max
-    float maxAbs = fmaxf(fabsf(Va), fmaxf(fabsf(Vb), fabsf(Vc)));
+    float maxAbs = fmaxf(fabsf(motor->invClarkeOut.Va), fmaxf(fabsf(motor->invClarkeOut.Vb), fabsf(motor->invClarkeOut.Vc)));
     if (maxAbs > Iq_limit) {
         float scale = Iq_limit / maxAbs;
-        Va *= scale; Vb *= scale; Vc *= scale;
+        motor->invClarkeOut.Va *= scale; motor->invClarkeOut.Vb *= scale; motor->invClarkeOut.Vc *= scale;
     }
     
-
+    // commutate_svpwm(motor, elec_deg, Vq);
     // Map to PWM
-    uint16_t dutyU = voltage_to_duty(Va, Iq_limit);
-    uint16_t dutyV = voltage_to_duty(Vb, Iq_limit);
-    uint16_t dutyW = voltage_to_duty(Vc, Iq_limit);
+    uint16_t dutyU = voltage_to_duty(motor->invClarkeOut.Va, Iq_limit);
+    uint16_t dutyV = voltage_to_duty(motor->invClarkeOut.Vb, Iq_limit);
+    uint16_t dutyW = voltage_to_duty(motor->invClarkeOut.Vc, Iq_limit);
   
 
     if (dutyU < MIN_PHASE_DUTY) dutyU = MIN_PHASE_DUTY;
@@ -159,6 +161,7 @@ void motor_velocity_control(MotorController_t *motor, float target_velocity_dps,
            target_velocity_dps, motor->measured_velocity_dps, vel_error, Iq_ref,
            motor->theta_elec, motor->encoder->angleDegrees, dutyU, dutyV, dutyW);
 }
+
 
 // Sinusoidal commutation helper (for test or startup)
 void commutate_sinusoidal(MotorController_t *motor, float elec_angle_deg, float Iq) {

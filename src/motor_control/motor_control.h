@@ -5,12 +5,13 @@
 #include <stdbool.h>
 #include "encoder_hal.h"
 #include "pwm_hal.h"
+#include "transform.h"
 
 // Control loop parameters
 #define CONTROL_PERIOD_MS    1           // main loop period in ms
 #define MAX_DUTY             50        // maximum PWM value
 #define MIN_PHASE_DUTY       10          // minimum duty to overcome friction/startup
-#define KP_VEL               0.5f       // velocity proportional gain
+#define KP_VEL               0.8f       // velocity proportional gain
 #define KI_VEL               0.001f      // velocity integral gain
 #define INTEGRAL_MAX         50.0f       // max integrator value for velocity PI
 #define Iq_SLEW_DPS          200.0f      // max Iq change per second
@@ -22,6 +23,27 @@ typedef struct {
     float target_velocity_dps;     // desired velocity command
     float velocity_target_dps;     // final target (after ramping/smoothing)
     float last_angle_deg;          // last mechanical angle for velocity calculation
+
+
+    // Transform Structures
+
+
+    // Clarke
+    clarkeInput_t      phaseCurrents;   // ia, ib, ic
+    clarkeOutput_t     clarkeOut;       // i_alpha, i_beta
+
+    // Park
+    parkInput_t        parkIn;          // i_alpha, i_beta, sin, cos
+    parkOutput_t       parkOut;         // id, iq
+
+    // Inverse Park
+    inv_parkInput_t    invParkIn;       // vd, vq, sin, cos
+
+    // Inverse Clarke
+    inv_clarkeOutput_t invClarkeOut;    // va, vb, vc
+
+    inv_parkOutputInvClarkeIn_t ab_voltages;  // v_alpha, v_beta
+
 
     // Electrical angle
     float theta_elec;              // electrical angle (deg)
@@ -35,7 +57,7 @@ typedef struct {
     uint8_t pole_pairs;            // motor pole pairs
     uint8_t elec_offset;           // electrical offset (deg)
     bool encoder_reversed;         // reverse encoder direction
-
+    uint8_t Vbus;                  // motor bus voltage
     // Hardware interfaces
     PWM_hal_t *pwmU;
     PWM_hal_t *pwmV;
@@ -57,7 +79,7 @@ void motor_velocity_control(MotorController_t *motor, float target_velocity_dps,
 
 // FOC commutation
 void commutate_sinusoidal(MotorController_t *motor, float elec_angle_deg, float Iq);
-
+void commutate_svpwm(MotorController_t *motor, float elec_angle_deg, float Vq);
 // Calibration & startup routines
 void motor_calibrate_offset(MotorController_t *motor, float test_duty);
 void motor_startup(MotorController_t *motor, float target_velocity_dps);
