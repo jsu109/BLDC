@@ -18,9 +18,9 @@ typedef struct adc_hal {
     void (*init)(adc_settings_t *);
     bool (*check_adc_gpio_pin)(uint8_t pin);
     bool (*check_adc_input)(uint8_t input);
-
+    uint16_t (*read)(uint8_t input);
 } adc_hal_t;
 
 void adc_hal_init(adc_hal_t *adcInstance);
-
+uint16_t adc_hal_read(adc_hal_t *adcInstance);
 #endif //ADC_HAL_H

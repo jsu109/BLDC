@@ -23,15 +23,21 @@ bool rp2040_check_adc_input(uint8_t input) {
 }
 
 void rp2040_adc_init(adc_settings_t *adc_settings) {
+	
+	assert(adc_settings->input < 4);
+    	adc_init();
+    	adc_gpio_init(adc_settings->adcPin);
+    	adc_select_input(adc_settings->input);
 
-    adc_init();
-    adc_gpio_init(adc_settings->adcPin);
-    adc_select_input(adc_settings->input);
 
+}
+uint16_t rp2040_adc_read(uint8_t adc_input) {
+	adc_select_input(adc_input);
+	return adc_read();
 }
 
 
-    // adc_init();
+// adc_init();
 
     // // Make sure GPIO is high-impedance, no pullups etc
     // adc_gpio_init();

@@ -23,6 +23,8 @@ bool rp2040_check_adc_input(uint8_t input);
 
 
 void rp2040_adc_init(adc_settings_t *adc_settings);
+// Read from a specific ADC input (blocking)
+uint16_t rp2040_adc_read(uint8_t input);
 
 
 #endif //RP2040_ADC_H

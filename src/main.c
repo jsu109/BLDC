@@ -141,7 +141,13 @@ GPIO_hal_t nFault = {
     },
 };
 
-
+adc_hal_t test_adc = {
+	.settings = {
+	.adcPin = 28,
+	.input = 2,
+	.sysType = RP2040,
+	},
+};
 
 
 
@@ -160,6 +166,12 @@ float read_pot_voltage(void) {
     adc_select_input(2);  // Select ADC input 2 (GPIO28)
     uint16_t raw = adc_read();  // Read raw ADC value (0–4095)
 
+
+
+    
+
+    //uint16_t raw = test_adc.read(test_adc.settings.input);
+    
     return (raw * VREF) / MAX_ADC;  // Convert to voltage
 }
 
@@ -294,11 +306,15 @@ int main()
 {
     stdio_init_all();
     adc_init();
-    adc_gpio_init(28);  // Enable ADC function on GPIO28
+    //adc_gpio_init(28);  // Enable ADC function on GPIO28
     gpio_hal_init(&nSleep,&nSleep.settings);
     gpio_hal_init(&nFault,&nFault.settings); //initalise nFault, (input)
     
-
+    test_adc.init(&test_adc.settings);
+    
+    gpio_hal_init(&led,&led.settings);
+    led.put(&led,0);    
+	
     
     bool res2 = encoderHalInit(&encoder2);
 
